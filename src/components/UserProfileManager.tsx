@@ -286,7 +286,7 @@ export function UserProfileManager({
                 {getInitials(user?.user_metadata?.display_name)}
               </AvatarFallback>
             </Avatar>
-            {isPremium && <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+            {isPremium && <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                 <Crown className="h-2.5 w-2.5 text-white" />
               </div>}
           </Button>
@@ -294,7 +294,7 @@ export function UserProfileManager({
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="flex items-center gap-2">
             <span>My Account</span>
-            {isPremium && <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+            {isPremium && <Badge className="bg-primary text-white border-0">
                 <Crown className="h-3 w-3 mr-1" />
                 Premium
               </Badge>}
@@ -326,7 +326,7 @@ export function UserProfileManager({
               {getInitials(user?.user_metadata?.display_name)}
             </AvatarFallback>
           </Avatar>
-          {isPremium && <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+          {isPremium && <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-lg">
               <Crown className="h-3 w-3 text-white" />
             </div>}
         </div>
@@ -365,7 +365,7 @@ export function UserProfileManager({
                       {getInitials(user?.user_metadata?.display_name)}
                     </AvatarFallback>
                   </Avatar>
-                  {isPremium && <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  {isPremium && <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg">
                       <Crown className="h-3.5 w-3.5 text-white" />
                     </div>}
                 </div>
