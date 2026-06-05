@@ -123,8 +123,8 @@ const Trades = () => {
   const [copyTradeDialog, setCopyTradeDialog] = useState(false);
   const [tradeToCopy, setTradeToCopy] = useState<Trade | null>(null);
 
-  // Premium limits for basic users
-  const BASIC_TRADE_LIMIT = 50;
+  // Premium limits for basic users (Starter plan: 20 trades / month)
+  const BASIC_TRADE_LIMIT = 20;
 
   useEffect(() => {
     if (user) {
@@ -602,7 +602,7 @@ const Trades = () => {
             {hasExceededLimit ? (
               <PremiumFeature
                 feature="Unlimited Trades"
-                description="You've reached the 50 trade limit for basic users. Upgrade to premium for unlimited trade tracking."
+                description="You've reached the 20 trade / month limit on the Starter plan. Upgrade to Professional for unlimited trades."
                 showUpgrade={false}
                 fallback={
                   <Button disabled variant="outline">

@@ -151,7 +151,7 @@ const Upgrade = () => {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
                     <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span>Up to 50 trades per month</span>
+                    <span>Up to 20 trades per month</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <Check className="h-5 w-5 text-green-500 flex-shrink-0" />

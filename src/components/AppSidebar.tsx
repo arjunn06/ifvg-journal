@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import { UserProfileManager } from '@/components/UserProfileManager';
 import { useSubscription } from '@/hooks/useSubscription';
+import { LogoMark } from '@/components/LogoMark';
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -70,9 +71,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 border-b border-sidebar-border transition-all duration-300">
         {!collapsed && (
           <div className="flex items-center gap-3 animate-fade-in">
-            <div className="bg-primary text-primary-foreground rounded-lg h-9 w-9 flex items-center justify-center shadow-[0_0_20px_hsl(var(--brand-red)/0.45)] hover:scale-110 transition-transform duration-200">
-              <span className="font-display text-base leading-none">i</span>
-            </div>
+            <LogoMark className="h-9 w-9 hover:scale-110 transition-transform duration-200" />
             <div>
               <span className="font-display text-lg text-sidebar-foreground tracking-tight">
                 IFVG<span className="text-primary">Journal</span>

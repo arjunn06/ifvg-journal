@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Building2, Edit, Trash2, DollarSign, History, BarChart3, Upload, Receipt } from 'lucide-react';
+import { Plus, Building2, Edit, Trash2, DollarSign, History, BarChart3, Upload, Receipt, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -569,10 +569,10 @@ const TradingAccounts = () => {
                   {formData.account_type === 'prop firm' && (
                     <div className="space-y-4 border border-border rounded-lg p-4">
                       <div className="flex items-center space-x-2">
-                        <div className="h-4 w-4 rounded bg-purple-100 flex items-center justify-center">
-                          <div className="h-2 w-2 rounded bg-purple-600"></div>
+                        <div className="h-4 w-4 rounded bg-muted flex items-center justify-center">
+                          <div className="h-2 w-2 rounded bg-primary"></div>
                         </div>
-                        <Label className="font-medium text-purple-700">
+                        <Label className="font-medium text-foreground">
                           Prop Firm Challenge Settings
                         </Label>
                       </div>
@@ -722,14 +722,20 @@ const TradingAccounts = () => {
                  )}
                  
                   
-                   {/* CSV Import Section - only show for existing accounts */}
+                   {/* CSV Import — flexible mapping for any broker/journal */}
                    {editingAccount && (
-                    <div className="pt-4 border-t space-y-4">
+                    <div className="pt-6 border-t space-y-4">
                       <div>
-                        <h3 className="text-sm font-medium mb-3">CSV Import</h3>
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          <FileSpreadsheet className="h-4 w-4 text-primary" />
+                          Import trades from CSV
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 mb-4">
+                          Upload a CSV from any broker or journal. We'll auto-detect columns and
+                          let you map anything that doesn't match. Required: Symbol, Type, Entry Price, Quantity, Entry Date.
+                        </p>
                         <CsvImportSection 
                           accountId={editingAccount.id} 
-                          compact={true}
                           onImportComplete={() => {
                             toast({
                               title: "Import complete",
@@ -740,6 +746,7 @@ const TradingAccounts = () => {
                       </div>
                     </div>
                   )}
+                  
                   
                 <div className="sticky bottom-0 bg-background pt-4 border-t mt-6">
                   <Button type="submit" className="w-full">

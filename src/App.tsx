@@ -44,7 +44,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="trade-zero-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="ifvg-journal-theme">
       <TooltipProvider>
         <AuthProvider>
           <SubscriptionProvider>
