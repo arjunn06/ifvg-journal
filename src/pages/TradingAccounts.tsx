@@ -722,14 +722,20 @@ const TradingAccounts = () => {
                  )}
                  
                   
-                   {/* CSV Import Section - only show for existing accounts */}
+                   {/* CSV Import — flexible mapping for any broker/journal */}
                    {editingAccount && (
-                    <div className="pt-4 border-t space-y-4">
+                    <div className="pt-6 border-t space-y-4">
                       <div>
-                        <h3 className="text-sm font-medium mb-3">CSV Import</h3>
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          <FileSpreadsheet className="h-4 w-4 text-primary" />
+                          Import trades from CSV
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 mb-4">
+                          Upload a CSV from any broker or journal. We'll auto-detect columns and
+                          let you map anything that doesn't match. Required: Symbol, Type, Entry Price, Quantity, Entry Date.
+                        </p>
                         <CsvImportSection 
                           accountId={editingAccount.id} 
-                          compact={true}
                           onImportComplete={() => {
                             toast({
                               title: "Import complete",
@@ -740,6 +746,7 @@ const TradingAccounts = () => {
                       </div>
                     </div>
                   )}
+                  
                   
                 <div className="sticky bottom-0 bg-background pt-4 border-t mt-6">
                   <Button type="submit" className="w-full">
