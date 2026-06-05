@@ -5,9 +5,11 @@ import { toast } from "sonner";
 
 interface Props {
   amount?: number;
+  plan?: string;
   planName?: string;
   planId?: string;
-  onSuccess?: () => void;
+  onSuccess?: () => void | Promise<void>;
+  onError?: (error: any) => void;
   children?: ReactNode;
   className?: string;
 }
