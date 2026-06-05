@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { RazorpayPayment } from '@/components/RazorpayPayment';
 import { TrendingUp, BarChart3, Shield, Calendar, Check, Brain, ArrowRight, Zap, Target, BookOpen, Sparkles, LineChart } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { LogoMark } from '@/components/LogoMark';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -27,9 +28,7 @@ const Index = () => {
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/40">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_24px_hsl(var(--brand-red)/0.5)] group-hover:shadow-[0_0_36px_hsl(var(--brand-red)/0.7)] transition-shadow">
-              <span className="font-display text-primary-foreground text-sm leading-none">i</span>
-            </div>
+            <LogoMark className="h-8 w-8 group-hover:shadow-[0_0_36px_hsl(var(--brand-red)/0.7)] transition-shadow" />
             <span className="font-display text-lg tracking-tight">
               IFVG<span className="text-primary">Journal</span>
             </span>
@@ -247,7 +246,7 @@ const Index = () => {
                 <span className="text-muted-foreground"> / month</span>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
-                {['Up to 50 trades / month', 'Basic analytics', 'P&L calendar', '1 trading account', 'CSV import'].map((l) => (
+                {['Up to 20 trades / month', 'Basic analytics', 'P&L calendar', '1 trading account', 'CSV import'].map((l) => (
                   <li key={l} className="flex items-center gap-3"><Check className="h-4 w-4 text-primary flex-shrink-0" /><span>{l}</span></li>
                 ))}
               </ul>
@@ -265,7 +264,7 @@ const Index = () => {
                 <span className="text-muted-foreground"> / month</span>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
-                {['Unlimited trades', 'Advanced analytics + reports', 'Multiple accounts', 'Confluence tagging', 'AI screenshot review', 'Rithmic / prop firm import', 'Priority support'].map((l) => (
+                {['Unlimited trades', 'Advanced analytics + reports', 'Multiple accounts', 'Confluence tagging', 'Flexible CSV import (any broker)', 'Priority support'].map((l) => (
                   <li key={l} className="flex items-center gap-3"><Check className="h-4 w-4 text-primary flex-shrink-0" /><span>{l}</span></li>
                 ))}
               </ul>

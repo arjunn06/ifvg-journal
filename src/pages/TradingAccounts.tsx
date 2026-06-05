@@ -569,10 +569,10 @@ const TradingAccounts = () => {
                   {formData.account_type === 'prop firm' && (
                     <div className="space-y-4 border border-border rounded-lg p-4">
                       <div className="flex items-center space-x-2">
-                        <div className="h-4 w-4 rounded bg-purple-100 flex items-center justify-center">
-                          <div className="h-2 w-2 rounded bg-purple-600"></div>
+                        <div className="h-4 w-4 rounded bg-muted flex items-center justify-center">
+                          <div className="h-2 w-2 rounded bg-primary"></div>
                         </div>
-                        <Label className="font-medium text-purple-700">
+                        <Label className="font-medium text-foreground">
                           Prop Firm Challenge Settings
                         </Label>
                       </div>

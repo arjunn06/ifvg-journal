@@ -39,7 +39,7 @@ interface TransactionMetrics {
 const transactionTypes = [
   { value: 'deposit', label: 'Deposit', icon: TrendingUp, color: 'text-green-600' },
   { value: 'withdrawal', label: 'Withdrawal', icon: TrendingDown, color: 'text-red-600' },
-  { value: 'evaluation_fee', label: 'Evaluation Fee', icon: Building2, color: 'text-purple-600' },
+  { value: 'evaluation_fee', label: 'Evaluation Fee', icon: Building2, color: 'text-muted-foreground' },
   { value: 'payout', label: 'Payout', icon: DollarSign, color: 'text-emerald-600' },
   { value: 'commission', label: 'Commission', icon: DollarSign, color: 'text-yellow-600' },
   { value: 'other', label: 'Other', icon: DollarSign, color: 'text-gray-600' },

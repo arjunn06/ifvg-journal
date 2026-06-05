@@ -74,9 +74,7 @@ const Auth = () => {
       <Card className="w-full max-w-md border-border/60 bg-card/80 backdrop-blur-xl shadow-2xl relative">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2.5 mb-4">
-            <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_24px_hsl(var(--brand-red)/0.5)]">
-              <span className="font-display text-base leading-none">i</span>
-            </div>
+            <LogoMark className="h-9 w-9" />
             <CardTitle className="text-2xl font-display tracking-tight">
               IFVG<span className="text-primary">Journal</span>
             </CardTitle>
