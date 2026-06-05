@@ -143,7 +143,7 @@ const TradeDetail = () => {
       if (confluenceError) throw confluenceError;
 
       const items = confluenceData?.map(item => item.confluence_items).filter(Boolean) || [];
-      setConfluenceItems(items as ConfluenceItem[]);
+      setConfluenceItems(items as unknown as ConfluenceItem[]);
     } catch (error) {
       console.error('Error fetching trade confluence:', error);
     }
