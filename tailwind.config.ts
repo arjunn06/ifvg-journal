@@ -19,11 +19,12 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				'display': ['"Archivo Black"', 'Inter', 'ui-sans-serif', 'sans-serif'],
-				'cirka': ['"Archivo Black"', 'Inter', 'sans-serif'],
-				'cirka-bold': ['"Archivo Black"', 'Inter', 'sans-serif'],
-				'cirka-light': ['Inter', 'sans-serif'],
+				'sans': ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				'display': ['"Clash Display"', 'Archivo', 'ui-sans-serif', 'sans-serif'],
+				'serif': ['"Playfair Display"', 'ui-serif', 'serif'],
+				'cirka': ['"Clash Display"', 'Archivo', 'sans-serif'],
+				'cirka-bold': ['"Clash Display"', 'Archivo', 'sans-serif'],
+				'cirka-light': ['Archivo', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -82,12 +83,15 @@ export default {
 				},
 				'brand-blue': 'hsl(var(--brand-red))',
 				'brand-red': 'hsl(var(--brand-red))',
+				'brand-purple': 'hsl(var(--brand-purple))',
+				'brand-gold': 'hsl(var(--brand-gold))',
 				'brand-glow': 'hsl(var(--brand-red) / 0.4)'
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				lg: '1rem',
+				md: 'var(--radius)',
+				sm: '0.5rem',
+				DEFAULT: 'var(--radius)'
 			},
 			keyframes: {
 				'accordion-down': {
