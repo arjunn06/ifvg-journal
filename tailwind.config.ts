@@ -83,9 +83,10 @@ export default {
 				},
 				'brand-blue': 'hsl(var(--brand-red))',
 				'brand-red': 'hsl(var(--brand-red))',
-				'brand-purple': 'hsl(var(--brand-purple))',
-				'brand-gold': 'hsl(var(--brand-gold))',
+				'brand-purple': 'hsl(var(--muted-foreground))',
+				'brand-gold': 'hsl(var(--muted-foreground))',
 				'brand-glow': 'hsl(var(--brand-red) / 0.4)'
+
 			},
 			borderRadius: {
 				lg: '1rem',

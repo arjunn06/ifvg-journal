@@ -88,7 +88,7 @@ interface PremiumBadgeProps {
 
 export function PremiumBadge({ className = '' }: PremiumBadgeProps) {
   return (
-    <Badge variant="secondary" className={`bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 ${className}`}>
+    <Badge variant="secondary" className={`bg-primary text-primary-foreground border-0 ${className}`}>
       <Crown className="h-3 w-3 mr-1" />
       Premium
     </Badge>
