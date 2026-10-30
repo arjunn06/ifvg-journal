@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Download, Eye, Upload, X } from 'lucide-react';
 import type { Account, Trade } from '../types';
 
 type Field = 'symbol' | 'trade_type' | 'entry_date' | 'entry_price' | 'exit_date' | 'exit_price' | 'quantity' | 'stop_loss' | 'take_profit' | 'pnl' | 'commission' | 'status' | 'notes';
@@ -10,6 +10,7 @@ const FIELDS: { key: Field; label: string; required?: boolean }[] = [
   { key: 'stop_loss', label: 'Stop loss' }, { key: 'take_profit', label: 'Target' }, { key: 'pnl', label: 'P&L' },
   { key: 'commission', label: 'Commission' }, { key: 'status', label: 'Status' }, { key: 'notes', label: 'Notes' },
 ];
+const SAMPLE_CSV = `Symbol,Side,Opened at,Entry price,Closed at,Exit price,Quantity,Stop loss,Target,P&L,Commission,Status,Notes\nES,long,2026-10-28 09:35,6832.25,2026-10-28 10:12,6840.50,2,6828.00,6842.00,825,4.50,closed,London breakout\nNQ,short,2026-10-29 14:05,25120.00,,,,1,,,0,open,Still in position`;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = []; let row: string[] = []; let cell = ''; let quoted = false;
@@ -49,6 +50,7 @@ export default function ImportTradesDialog({ accounts, selectedAccountId, onClos
   const [headers, setHeaders] = useState<string[]>([]); const [dataRows, setDataRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Partial<Record<Field, number>>>({}); const [accountId, setAccountId] = useState(selectedAccountId ?? accounts[0]?.id ?? '');
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [fileName, setFileName] = useState('');
+  const [showSample, setShowSample] = useState(false);
   const parsed = useMemo(() => dataRows.map((r, i) => {
     const v = (key: Field) => mapping[key] == null ? '' : (r[mapping[key]!] ?? '').trim();
     const side = v('trade_type').toLowerCase();
@@ -104,6 +106,14 @@ export default function ImportTradesDialog({ accounts, selectedAccountId, onClos
         <label className="j-field"><span>Import into account</span><select className="j-select" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
           {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select></label>
+        <div className="j-actions" style={{ gap: 8 }}>
+          <a className="j-btn" href={`data:text/csv;charset=utf-8,${encodeURIComponent(SAMPLE_CSV)}`} download="trade-import-sample.csv" style={{ textDecoration: 'none' }}><Download /> Download sample CSV</a>
+          <button className="j-btn" type="button" aria-expanded={showSample} onClick={() => setShowSample((v) => !v)}><Eye /> {showSample ? 'Hide sample' : 'Preview sample'}</button>
+        </div>
+        {showSample && <div>
+          <div className="j-meta" style={{ marginBottom: 6 }}>Use these headers as a starting point. Symbol, Side and Opened at are required; the other columns are optional.</div>
+          <pre style={{ margin: 0, padding: 12, overflow: 'auto', maxHeight: 150, borderRadius: 6, background: 'var(--raised)', color: 'var(--text)', font: '12px/1.55 var(--mono, monospace)' }}>{SAMPLE_CSV}</pre>
+        </div>}
         <label className="j-btn" style={{ width: 'fit-content', cursor: 'pointer' }}><Upload />{fileName || 'Choose CSV'}<input type="file" accept=".csv,text/csv" onChange={(e) => void load(e.target.files?.[0])} style={{ display: 'none' }} /></label>
         {!!headers.length && <>
           <div style={{ maxHeight: 320, overflow: 'auto' }}>
