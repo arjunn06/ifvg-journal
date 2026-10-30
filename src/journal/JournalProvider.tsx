@@ -64,6 +64,7 @@ interface JournalContext extends JournalData {
   startBalance: number;
 
   saveTrade: (trade: Partial<Trade>, extras?: SaveTradeExtras) => Promise<string>;
+  importTrades: (accountId: string, trades: Partial<Trade>[]) => Promise<void>;
   deleteTrade: (id: string) => Promise<void>;
 }
 
@@ -218,10 +219,29 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     await refresh();
   }, [isDemo, refresh]);
 
+  const importTrades = useCallback(async (accountId: string, imported: Partial<Trade>[]) => {
+    if (!data.accounts.some((a) => a.id === accountId && a.is_active)) throw new Error('Choose an active account');
+    if (isDemo) {
+      setDemo((d) => d && ({
+        ...d,
+        trades: [...imported.map((trade, i) => ({
+          ...trade, id: `tr-import-${Date.now()}-${i}`, user_id: 'demo', trading_account_id: accountId,
+          created_at: new Date().toISOString(), source: 'csv',
+        } as Trade)), ...d.trades].sort((a, b) => +new Date(b.entry_date) - +new Date(a.entry_date)),
+      }));
+      return;
+    }
+    if (!userId) throw new Error('Not signed in');
+    const rows = imported.map((trade) => ({ ...trade, user_id: userId, trading_account_id: accountId, source: 'csv' }));
+    const { error } = await supabase.from('trades').insert(rows as never);
+    if (error) throw new Error(error.message);
+    await refresh();
+  }, [data.accounts, isDemo, refresh, userId]);
+
   const value: JournalContext = {
     ...data, loading, error, isDemo, userId, refresh,
     scope, setScope, period, setPeriod, scopeAccounts, scopeTrades, viewTrades, startBalance,
-    saveTrade, deleteTrade,
+    saveTrade, importTrades, deleteTrade,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

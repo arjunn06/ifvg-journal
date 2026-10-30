@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Plus, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Search, Upload } from 'lucide-react';
 import { useJournal } from '../JournalProvider';
 import { useQuickLog } from '../quicklog/QuickLog';
 import { PERIODS, rOf, type Period } from '../analytics';
@@ -11,6 +11,7 @@ import { SESSIONS, sessionLabel, type Trade } from '../types';
 import { int, isoDate, price, shortDate, timeHM, qty } from '../format';
 import { Empty, ErrorBlock, PageHeader, Panel, Pill, PnL, Range, Signed, Skel } from '../ui/kit';
 import TradeInspector, { InspectorEmpty } from '../ui/TradeInspector';
+import ImportTradesDialog from './ImportTradesDialog';
 import { RESULTS, byEntryDesc, mistakesFor, resultOf, type Result } from '../ui/tradeInfo';
 import './journal-list.css';
 
@@ -67,6 +68,7 @@ export default function Journal() {
   const [sort, setSort] = useState<Sort>({ key: 'when', dir: 'desc' });
   const [limit, setLimit] = useState(PAGE);
   const [picked, setPicked] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const bodyRef = useRef<HTMLTableSectionElement>(null);
 
   const currency = scopeAccounts[0]?.currency ?? 'USD';
@@ -116,13 +118,14 @@ export default function Journal() {
   if (!J.trades.length) {
     return (
       <>
-        <PageHeader title="Journal" sub="Every trade you log lands here, newest first." />
+        <PageHeader title="Journal" sub="Every trade you log lands here, newest first." actions={<button className="j-btn" onClick={() => setImportOpen(true)}><Upload /> Import CSV</button>} />
         <Panel title="No trades yet">
           <p style={{ color: 'var(--text-2)', maxWidth: '56ch', marginBottom: 16 }}>
             Log a trade right after you close it: the setup, the checklist you ticked, what you felt. This list, the calendar and the reports are built from those rows.
           </p>
-          <div className="j-actions"><button className="j-btn primary" onClick={openLog}><Plus /> Log your first trade</button></div>
+          <div className="j-actions"><button className="j-btn primary" onClick={openLog}><Plus /> Log your first trade</button><button className="j-btn" onClick={() => setImportOpen(true)}><Upload /> Import CSV</button></div>
         </Panel>
+        {importOpen && <ImportTradesDialog accounts={J.accounts.filter((a) => a.is_active)} selectedAccountId={J.scope === 'all' ? null : J.scope} onClose={() => setImportOpen(false)} onImport={J.importTrades} />}
       </>
     );
   }
@@ -246,7 +249,7 @@ export default function Journal() {
 
   return (
     <>
-      <PageHeader title="Journal" sub={sub} />
+      <PageHeader title="Journal" sub={sub} actions={<button className="j-btn" onClick={() => setImportOpen(true)}><Upload /> Import CSV</button>} />
       {error && <ErrorBlock message={`Couldn't load your journal: ${error}`} onRetry={refresh} />}
 
       <div className="j-filters" role="search">
@@ -283,6 +286,7 @@ export default function Journal() {
           {selected ? <TradeInspector key={selected.id} trade={selected} variant="pane" /> : <InspectorEmpty />}
         </div>
       ) : table}
+      {importOpen && <ImportTradesDialog accounts={J.accounts.filter((a) => a.is_active)} selectedAccountId={J.scope === 'all' ? null : J.scope} onClose={() => setImportOpen(false)} onImport={J.importTrades} />}
     </>
   );
 }
