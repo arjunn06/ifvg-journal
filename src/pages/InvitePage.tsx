@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Field, PasswordField, SoloScreen } from '@/journal/auth/parts';
 
 interface InvitationData {
   id: string;
@@ -27,6 +24,7 @@ export function InvitePage() {
     displayName: ''
   });
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -78,21 +76,15 @@ export function InvitePage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    setFormError(null);
+
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        variant: 'destructive'
-      });
+      setFormError('Passwords do not match.');
       return;
     }
 
     if (formData.password.length < 6) {
-      toast({
-        title: 'Error',
-        description: 'Password must be at least 6 characters',
-        variant: 'destructive'
-      });
+      setFormError('Password must be at least 6 characters.');
       return;
     }
 
@@ -106,11 +98,7 @@ export function InvitePage() {
       );
 
       if (error) {
-        toast({
-          title: 'Sign Up Failed',
-          description: error.message,
-          variant: 'destructive'
-        });
+        setFormError(error.message);
         return;
       }
 
@@ -129,11 +117,7 @@ export function InvitePage() {
       });
 
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'An error occurred during sign up',
-        variant: 'destructive'
-      });
+      setFormError(error.message || 'An error occurred during sign up.');
     } finally {
       setIsSigningUp(false);
     }
@@ -146,99 +130,39 @@ export function InvitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Validating invitation...</p>
-        </div>
-      </div>
+      <SoloScreen title="Checking your invitation" sub="One moment.">
+        <div className="j-track" role="progressbar" aria-label="Validating invitation"><i style={{ width: '40%' }} /></div>
+      </SoloScreen>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-              <AlertCircle className="h-6 w-6 text-destructive" />
-            </div>
-            <CardTitle>Invalid Invitation</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button asChild>
-              <a href="/">Back to Home</a>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <SoloScreen title="This invitation can't be used" sub={error + '.'}>
+        <div className="auth-actions">
+          <Link to="/auth" className="j-btn primary">Go to sign in</Link>
+          <Link to="/" className="j-btn ghost">Back to home</Link>
+        </div>
+      </SoloScreen>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <CheckCircle className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle>Welcome to IFVG Journal Beta!</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            You've been invited to join our exclusive beta
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 p-3 bg-muted rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <Mail className="h-4 w-4" />
-              <span className="font-medium">{invitation?.email}</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input
-                id="displayName"
-                type="text"
-                placeholder="Enter your display name"
-                value={formData.displayName}
-                onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a strong password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isSigningUp}>
-              {isSigningUp ? 'Creating Account...' : 'Join IFVG Journal Beta'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <SoloScreen title="Join the IFVG Journal beta" sub="You have been invited. Choose a name and a password to create your account.">
+      <form onSubmit={handleSignUp} style={{ display: 'grid', gap: 16 }} aria-label="Create your account">
+        <Field label="Email" type="email" value={invitation?.email ?? ''} readOnly autoComplete="email"
+          hint="The invitation is tied to this address." />
+        <Field label="Display name" name="name" value={formData.displayName} autoComplete="name"
+          onChange={(v) => setFormData(prev => ({ ...prev, displayName: v }))} disabled={isSigningUp} />
+        <PasswordField label="Password" name="password" value={formData.password} autoComplete="new-password" hint="Use at least 6 characters."
+          onChange={(v) => setFormData(prev => ({ ...prev, password: v }))} disabled={isSigningUp} />
+        <PasswordField label="Confirm password" name="confirm" value={formData.confirmPassword} autoComplete="new-password"
+          onChange={(v) => setFormData(prev => ({ ...prev, confirmPassword: v }))} disabled={isSigningUp} />
+        {formError && <p className="auth-err" role="alert">{formError}</p>}
+        <div className="auth-actions">
+          <button type="submit" className="j-btn primary" disabled={isSigningUp}>{isSigningUp ? 'Creating account…' : 'Create account'}</button>
+        </div>
+      </form>
+    </SoloScreen>
   );
 }

@@ -19,12 +19,13 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				'display': ['"Clash Display"', 'Archivo', 'ui-sans-serif', 'sans-serif'],
-				'serif': ['"Playfair Display"', 'ui-serif', 'serif'],
-				'cirka': ['"Clash Display"', 'Archivo', 'sans-serif'],
-				'cirka-bold': ['"Clash Display"', 'Archivo', 'sans-serif'],
-				'cirka-light': ['Archivo', 'sans-serif'],
+				'sans': ['"Public Sans Variable"', '"Public Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				'display': ['"Public Sans Variable"', '"Public Sans"', 'ui-sans-serif', 'sans-serif'],
+				'mono': ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+				'serif': ['"Public Sans Variable"', 'ui-sans-serif', 'sans-serif'],
+				'cirka': ['"Public Sans Variable"', 'sans-serif'],
+				'cirka-bold': ['"Public Sans Variable"', 'sans-serif'],
+				'cirka-light': ['"Public Sans Variable"', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
