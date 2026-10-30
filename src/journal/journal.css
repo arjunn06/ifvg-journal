@@ -265,6 +265,14 @@ body { font-family: var(--font); font-size: var(--fs-body); line-height: 20px; }
 .j-day.win .c, .j-day.loss .c, .j-day.win .d, .j-day.loss .d { color: var(--text-2); }
 .j-week { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding: 8px 6px; font-size: 12px; color: var(--dim); }
 .j-week b { font: 500 13px var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.ov-week-control { display: inline-flex; align-items: center; gap: 6px; }
+.ov-week-control .j-btn { cursor: default; }
+.ov-week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; }
+.ov-week-day { min-width: 0; display: grid; gap: 7px; align-content: center; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.ov-week-day.today { border-color: var(--text-2); }
+.ov-week-date { color: var(--text-2); font-size: 13px; }
+.ov-week-day strong { font-size: 18px; line-height: 1.2; font-weight: 550; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ov-week-day .j-meta { white-space: nowrap; }
 
 /* ---------- ladder: stop / entry / target / exit on one R axis ---------- */
 .j-ladder { position: relative; height: 72px; margin: 6px 0 2px; }
@@ -325,6 +333,9 @@ body { font-family: var(--font); font-size: var(--fs-body); line-height: 20px; }
   .j-inspect { display: none; }
 }
 @media (max-width: 860px) {
+  .ov-week-grid { grid-template-columns: repeat(7, minmax(112px, 1fr)); overflow-x: auto; padding-bottom: 4px; }
+  .ov-week-control { flex-wrap: wrap; }
+  .ov-week-control .j-link { flex-basis: 100%; text-align: center; }
   :root { --pad: 18px; --gap: 16px; }
   .j-app { grid-template-columns: minmax(0, 1fr); padding-bottom: 64px; }
   .j-rail { display: none; }

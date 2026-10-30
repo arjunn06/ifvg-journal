@@ -80,7 +80,7 @@ export function TransactionDialog({ open, onClose, defaultAccount, onSaved }: {
           <div className="j-field full">
             <label htmlFor={`${formId}-type`}>Type</label>
             <select id={`${formId}-type`} className="j-select" value={f.type} onChange={(e) => set('type', e.target.value)}>
-              {TX_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              {TX_TYPES.filter((t) => t.key !== 'balance_adjustment').map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
             {kind && <span className="j-hint">{kind.effect}</span>}
           </div>

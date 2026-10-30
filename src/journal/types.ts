@@ -90,7 +90,7 @@ export interface TradeMistake {
   severity: 'low' | 'medium' | 'high' | null;
 }
 
-export type TransactionType = 'deposit' | 'withdrawal' | 'challenge_fee' | 'evaluation_fee' | 'funded_account_fee' | 'payout';
+export type TransactionType = 'deposit' | 'withdrawal' | 'challenge_fee' | 'evaluation_fee' | 'funded_account_fee' | 'payout' | 'balance_adjustment';
 
 export interface Transaction {
   id: string;

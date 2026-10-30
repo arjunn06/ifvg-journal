@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import { useJournal } from '../JournalProvider';
 import { useQuickLog } from '../quicklog/QuickLog';
 import {
@@ -34,6 +34,9 @@ export default function Overview() {
   const { open: openLog } = useQuickLog();
   const J = useJournal();
   const [tab, setTab] = useState<ChartTab>('equity');
+  const [weekStart, setWeekStart] = useState(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d;
+  });
   const { viewTrades, scopeTrades, scopeAccounts, period, setPeriod, strategies, mistakes, transactions, startBalance, loading, error, refresh, accounts, isDemo, setScope, scope } = J;
   const currency = scopeAccounts[0]?.currency ?? 'USD';
 
@@ -76,11 +79,51 @@ export default function Overview() {
   const periodLabel = PERIODS.find((p) => p.key === period)!.label;
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date());
   const scopeLabel = scope === 'all' ? `${scopeAccounts.length} accounts` : scopeAccounts[0]?.name;
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(weekStart); date.setDate(date.getDate() + i);
+    const key = isoDate(date);
+    const trades = scopeTrades.filter((t) => isoDate(t.exit_date ?? t.entry_date) === key);
+    const closed = trades.filter(isClosed);
+    const pnl: Record<string, number> = {};
+    closed.forEach((t) => {
+      const cur = accounts.find((a) => a.id === t.trading_account_id)?.currency ?? currency;
+      pnl[cur] = (pnl[cur] ?? 0) + pnlOf(t);
+    });
+    return { date, key, count: trades.length, pnl };
+  });
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekLabel = `${new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(weekStart)} – ${new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(weekEnd)}`;
+  const allBalances = accounts.reduce<Record<string, number>>((totals, account) => {
+    totals[account.currency] = (totals[account.currency] ?? 0) + accountEquity(account, J.trades, transactions);
+    return totals;
+  }, {});
+  const totalBalance = Object.entries(allBalances).length
+    ? Object.entries(allBalances).map(([cur, value]) => <span key={cur} style={{ display: 'block' }}>{money(value, cur)}</span>)
+    : '—';
+  const weekControls = <div className="ov-week-control" aria-label={`Week of ${weekLabel}`}>
+    <button className="j-icon-btn" aria-label="Previous week" onClick={() => setWeekStart((d) => { const x = new Date(d); x.setDate(x.getDate() - 7); return x; })}><ArrowLeft /></button>
+    <span className="j-btn" aria-live="polite">{weekLabel}</span>
+    <button className="j-icon-btn" aria-label="Next week" onClick={() => setWeekStart((d) => { const x = new Date(d); x.setDate(x.getDate() + 7); return x; })}><ArrowRight /></button>
+    <button className="j-link" onClick={() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); setWeekStart(d); }}>This week</button>
+  </div>;
+  const weekStrip = <div className="ov-week-grid" aria-label={`Trades for ${weekLabel}`}>
+    {weekDays.map((d) => {
+      const results = Object.entries(d.pnl);
+      const tone = results.length && results.every(([, v]) => v > 0) ? 'j-pos' : results.length && results.every(([, v]) => v < 0) ? 'j-neg' : '';
+      return <div className={`ov-week-day${isoDate(new Date()) === d.key ? ' today' : ''}`} key={d.key}>
+      <span className="ov-week-date">{new Intl.DateTimeFormat('en-US', { weekday: 'short', day: '2-digit' }).format(d.date)}</span>
+      {results.length ? results.map(([cur, value]) => <strong className={tone} key={cur}>{money(value, cur, { sign: value !== 0, decimals: 0 })}</strong>) : <strong>{money(0, currency, { decimals: 0 })}</strong>}
+      <span className="j-meta">{d.count} {d.count === 1 ? 'trade' : 'trades'}</span>
+    </div>;
+    })}
+  </div>;
 
   if (!J.trades.length) {
     return (
       <>
-        <PageHeader title="Overview" sub={`${today} · ${scopeLabel ?? 'No accounts yet'}`} />
+        <PageHeader title="Weekly overview" sub={`${today} · ${scopeLabel ?? 'No accounts yet'}`} actions={weekControls} />
+        {weekStrip}
+        <Kpis items={[{ label: 'Current balance · all accounts', lead: true, value: totalBalance, note: `${accounts.length} accounts · grouped by currency` }]} />
         <Panel title="Your journal is empty">
           <p style={{ color: 'var(--text-2)', maxWidth: '56ch', marginBottom: 16 }}>
             Log a trade the moment you close it: the setup, the checklist, what you felt. The numbers on this screen build themselves from those rows.
@@ -106,14 +149,17 @@ export default function Overview() {
   return (
     <>
       <PageHeader
-        title="Overview"
+        title="Weekly overview"
         sub={finding ? <><b>{finding.text}</b> <span className="j-dim">· {today} · {scopeLabel} · {periodLabel}</span></> : `${today} · ${scopeLabel} · ${periodLabel}`}
-        actions={<Range value={period} onChange={setPeriod} />}
+        actions={<>{weekControls}<Range value={period} onChange={setPeriod} /></>}
       />
       {error && <ErrorBlock message={`Couldn't load your journal: ${error}`} onRetry={refresh} />}
 
+      {weekStrip}
+
       <Kpis items={[
-        { label: 'Net result', lead: true, tone: s.net < 0 ? 'neg' : 'flat', value: money(s.net, currency, { sign: true }),
+        { label: 'Current balance · all accounts', lead: true, value: totalBalance, note: `${accounts.length} accounts · grouped by currency` },
+        { label: 'Net result', tone: s.net < 0 ? 'neg' : 'flat', value: money(s.net, currency, { sign: true }),
           note: netDelta != null ? <><b>{money(netDelta, currency, { sign: true })}</b> vs prior {periodLabel}</> : `${int(s.count)} closed trades` },
         { label: 'Win rate', value: pct(s.winRate), note: `${s.wins} won · ${s.losses} lost · ${s.flat} flat` },
         { label: 'Profit factor', value: s.profitFactor == null ? '—' : dec2(s.profitFactor), note: s.avgWin != null && s.avgLoss != null ? `avg ${money(s.avgWin, currency, { decimals: 0 })} / ${money(-s.avgLoss, currency, { decimals: 0 })}` : 'needs a win and a loss' },

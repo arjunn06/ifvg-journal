@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Pencil, Plus, Power, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Pencil, Plus, Power, Scale, Trash2 } from 'lucide-react';
 import { useJournal } from '../../JournalProvider';
 import { equityCurve, isClosed, rOf, summarize, transactionNet } from '../../analytics';
 import { dec2, int, isoDate, money, pct, timeHM } from '../../format';
@@ -13,6 +13,7 @@ import { LineChart } from '../../ui/charts';
 import { removeAccount, setAccountActive } from './api';
 import { Amount } from './Funding';
 import { TransactionDialog } from './TransactionDialog';
+import { BalanceAdjustmentDialog } from './BalanceAdjustmentDialog';
 import { TypePill } from './bits';
 import { DemoReadOnly, accountRow, cashTotals, kindLong, txLabel, txOf } from './model';
 
@@ -21,6 +22,7 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
   const J = useJournal();
   const [confirm, setConfirm] = useState(false);
   const [txOpen, setTxOpen] = useState(false);
+  const [balanceOpen, setBalanceOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -80,6 +82,7 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
         title={a.name}
         sub={sub}
         actions={<>
+          <button className="j-btn" onClick={() => setBalanceOpen(true)}><Scale /> <span className="lbl">Adjust balance</span></button>
           <button className="j-btn" onClick={onEdit}><Pencil /> <span className="lbl">Edit</span></button>
           <button className="j-btn" onClick={toggleActive}><Power /> <span className="lbl">{a.is_active ? 'Deactivate' : 'Activate'}</span></button>
           <button className="j-btn danger" onClick={() => { setFailure(null); setConfirm(true); }}><Trash2 /> <span className="lbl">Delete</span></button>
@@ -240,6 +243,7 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
           <span>To keep the history and only hide the account, deactivate it instead.</span>
           {failure && <span className="j-err" role="alert" style={{ display: 'block', marginTop: 8 }}>{failure}</span>}
         </>} />
+      <BalanceAdjustmentDialog open={balanceOpen} onClose={() => setBalanceOpen(false)} accountId={a.id} accountName={a.name} currency={cur} currentBalance={row.equity} onDemo={onDemo} />
     </>
   );
 }

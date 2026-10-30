@@ -67,9 +67,11 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
     <>
       <span>Delete the {money(del.amount, accOf(del.trading_account_id)?.currency ?? cur)} {txLabel(del.transaction_type).toLowerCase()} dated {isoDate(del.transaction_date)}
       {accOf(del.trading_account_id) ? <> from {accOf(del.trading_account_id)!.name}</> : null}? </span>
-      <span>{del.transaction_type === 'deposit' || del.transaction_type === 'payout' || del.transaction_type === 'withdrawal'
-        ? `That account's equity ${del.transaction_type === 'withdrawal' ? 'goes up' : 'goes down'} by the same amount.`
-        : 'Equity does not change, but the cost leaves your totals.'}</span>
+      <span>{del.transaction_type === 'balance_adjustment'
+        ? `That account's current balance changes by ${money(del.amount, accOf(del.trading_account_id)?.currency ?? cur, { sign: true })}.`
+        : del.transaction_type === 'deposit' || del.transaction_type === 'payout' || del.transaction_type === 'withdrawal'
+          ? `That account's equity ${del.transaction_type === 'withdrawal' ? 'goes up' : 'goes down'} by the same amount.`
+          : 'Equity does not change, but the cost leaves your totals.'}</span>
       {delError && <span className="j-err" role="alert" style={{ display: 'block', marginTop: 8 }}>{delError}</span>}
     </>
   );

@@ -90,6 +90,22 @@ export async function writeTransaction(ctx: { isDemo: boolean; userId: string | 
   if (error) throw new Error(error.message);
 }
 
+export async function writeBalanceAdjustment(ctx: { isDemo: boolean; userId: string | null }, accountId: string, target: number, current: number) {
+  if (ctx.isDemo) throw new DemoReadOnly();
+  if (!ctx.userId) throw new Error('You are signed out. Sign in again to save.');
+  const difference = Math.round((target - current) * 100) / 100;
+  if (!Number.isFinite(difference) || Math.abs(difference) < 0.01) throw new Error('The adjusted balance must differ from the current balance.');
+  const { error } = await supabase.from('financial_transactions').insert({
+    user_id: ctx.userId,
+    trading_account_id: accountId,
+    transaction_type: 'balance_adjustment',
+    amount: difference,
+    description: 'Manual balance adjustment',
+    transaction_date: new Date().toISOString(),
+  } as never);
+  if (error) throw new Error(error.message);
+}
+
 export async function removeTransaction(ctx: { isDemo: boolean }, id: string) {
   if (ctx.isDemo) throw new DemoReadOnly();
   const { error } = await supabase.from('financial_transactions').delete().eq('id', id);

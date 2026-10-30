@@ -13,6 +13,7 @@ export const TX_TYPES: { key: TransactionType; label: string; effect: string }[]
   { key: 'challenge_fee', label: 'Challenge fee', effect: 'A cost. Equity does not change.' },
   { key: 'evaluation_fee', label: 'Evaluation fee', effect: 'A cost. Equity does not change.' },
   { key: 'funded_account_fee', label: 'Funded account fee', effect: 'A cost. Equity does not change.' },
+  { key: 'balance_adjustment', label: 'Balance adjustment', effect: 'Sets the account balance to a corrected amount.' },
 ];
 
 export const txLabel = (t: string) =>
@@ -20,7 +21,7 @@ export const txLabel = (t: string) =>
 
 /** The sign an amount carries in the ledger: money in is positive, money out and costs negative. */
 export function txSigned(x: Pick<Transaction, 'transaction_type' | 'amount'>): number {
-  if (x.transaction_type === 'deposit' || x.transaction_type === 'payout') return x.amount;
+  if (x.transaction_type === 'deposit' || x.transaction_type === 'payout' || x.transaction_type === 'balance_adjustment') return x.amount;
   if (x.transaction_type === 'withdrawal' || FEE_TYPES.includes(x.transaction_type)) return -x.amount;
   return x.amount;
 }

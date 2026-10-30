@@ -303,9 +303,13 @@ export function transactionNet(txs: Transaction[], accountId: string) {
     .reduce((s, x) => (ADDS.includes(x.transaction_type) ? s + x.amount : x.transaction_type === 'withdrawal' ? s - x.amount : s), 0);
 }
 
+export function balanceAdjustmentNet(txs: Transaction[], accountId: string) {
+  return txs.filter((x) => x.trading_account_id === accountId && x.transaction_type === 'balance_adjustment').reduce((sum, x) => sum + x.amount, 0);
+}
+
 export function accountEquity(a: Account, trades: Trade[], txs: Transaction[]) {
   const pnl = trades.filter((t) => t.trading_account_id === a.id && isClosed(t)).reduce((s, t) => s + pnlOf(t), 0);
-  return a.initial_balance + pnl + transactionNet(txs, a.id);
+  return a.initial_balance + pnl + transactionNet(txs, a.id) + balanceAdjustmentNet(txs, a.id);
 }
 
 export interface PropStatus {

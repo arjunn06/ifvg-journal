@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Download, Eye, Upload, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import type { Account, Trade } from '../types';
 
 type Field = 'symbol' | 'trade_type' | 'entry_date' | 'entry_price' | 'exit_date' | 'exit_price' | 'quantity' | 'stop_loss' | 'take_profit' | 'pnl' | 'commission' | 'status' | 'notes';
@@ -47,6 +48,7 @@ export default function ImportTradesDialog({ accounts, selectedAccountId, onClos
   accounts: Account[]; selectedAccountId: string | null; onClose: () => void;
   onImport: (accountId: string, trades: Partial<Trade>[]) => Promise<void>;
 }) {
+  const { toast } = useToast();
   const [headers, setHeaders] = useState<string[]>([]); const [dataRows, setDataRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Partial<Record<Field, number>>>({}); const [accountId, setAccountId] = useState(selectedAccountId ?? accounts[0]?.id ?? '');
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [fileName, setFileName] = useState('');
@@ -90,8 +92,14 @@ export default function ImportTradesDialog({ accounts, selectedAccountId, onClos
     if (!valid.length) { setError('No valid rows to import. Map Instrument, Side and Opened at, then check the values.'); return; }
     setBusy(true);
     try {
-      await onImport(accountId, valid.map(({ _row: _ignored, ...t }) => t)); onClose();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Import failed.'); }
+      await onImport(accountId, valid.map(({ _row: _ignored, ...t }) => t));
+      toast({ title: `${valid.length} ${valid.length === 1 ? 'trade' : 'trades'} imported successfully` });
+      onClose();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Import failed.';
+      setError(message);
+      toast({ title: 'Trade import failed', description: message, variant: 'destructive' });
+    }
     finally { setBusy(false); }
   };
 
