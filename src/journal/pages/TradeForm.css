@@ -1,0 +1,119 @@
+/* Trade form. Two columns: four panels, and a pinned Summary. Phone: the Summary becomes a bar that stays in view. */
+
+.tf { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--gap); align-items: start; margin-bottom: var(--gap); }
+.tf-main { display: grid; gap: var(--gap); min-width: 0; }
+.tf-side { position: sticky; top: 16px; min-width: 0; }
+.tf-panel { container-type: inline-size; }
+
+/* a 12-column field grid, so spans can change with the status without leaving holes */
+.tf-g { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px 16px; }
+.tf-c3 { grid-column: span 3; } .tf-c4 { grid-column: span 4; } .tf-c6 { grid-column: span 6; }
+.tf-g > * { min-width: 0; }
+@container (max-width: 600px) {
+  .tf-c3, .tf-c4 { grid-column: span 6; }
+  .tf-c6 { grid-column: 1 / -1; }
+}
+
+.tf-star { color: var(--dim); }
+.tf-draft { margin: -8px 0 16px; }
+.tf-sym { text-transform: uppercase; }
+.tf-sym::placeholder { text-transform: none; }
+.j-input[type="number"]::-webkit-outer-spin-button, .j-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.j-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.j-input[type="date"], .j-input[type="time"] { font-family: var(--mono); }
+.j-input[aria-invalid="true"], .j-select[aria-invalid="true"] { border-color: var(--negative); }
+.tf .j-field .j-err, .tf .j-field .j-hint { line-height: 16px; }
+
+/* auto suggestions and soft warnings */
+.tf-tag { display: inline-flex; align-items: center; height: 16px; padding: 0 6px; margin-right: 2px; border-radius: 999px; background: var(--raised); color: var(--text-2); font-size: 11px; font-weight: 500; line-height: 1; }
+.tf-auto .j-link { font-size: 12px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.tf-warn, .tf-warn-line { color: var(--warning); }
+
+/* choices: radio buttons drawn as labels; the selection is a 1px accent line as wide as the label */
+.tf-toggle { display: flex; gap: 8px; }
+.tf-opt { position: relative; flex: 1; display: block; cursor: pointer; }
+.tf-opt input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.tf-opt .in { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 12px; border: 1px solid var(--control); border-radius: 8px; background: var(--ground); color: var(--dim); font-weight: 500; transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease; }
+.tf-opt .in svg { width: 15px; height: 15px; stroke-width: 1.75; }
+.tf-opt .t { position: relative; padding: 2px 0; }
+.tf-opt:hover .in { border-color: #4b4b50; color: var(--text-2); }
+.tf-opt input:checked + .in { color: var(--text); background: var(--active); }
+.tf-opt input:checked + .in .t::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px; background: var(--sig); }
+.tf-opt:has(input:focus-visible) .in { outline: 2px solid var(--sig); outline-offset: 2px; }
+.tf-toggle.big .in { height: 44px; font-size: 14px; }
+
+/* chips: emotion (one) and mistakes (many) */
+.tf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tf-chip { position: relative; height: 30px; padding: 0 12px; border: 1px solid var(--control); border-radius: 999px; background: transparent; color: var(--dim); font-size: 12px; font-weight: 500; cursor: pointer; transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease; }
+.tf-chip:hover { color: var(--text-2); border-color: #4b4b50; }
+.tf-chip[aria-pressed="true"] { color: var(--text); background: var(--active); }
+.tf-chip[aria-pressed="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 5px; height: 1px; background: var(--sig); }
+
+/* mistakes: each selected tag takes a severity and an optional note */
+.tf-mrows { display: grid; margin-top: 4px; }
+.tf-mrow { display: grid; grid-template-columns: 150px 210px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule); }
+.tf-mrow:first-child { margin-top: 4px; }
+.tf-mtag { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tf-mrow .tf-opt .in { height: 30px; font-size: 12px; padding: 0 8px; }
+@container (max-width: 600px) {
+  .tf-mrow { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}
+
+.tf-review { display: grid; gap: 22px; }
+
+/* checklist */
+.tf-score-track { margin: 2px 0 12px; }
+.tf-checks { list-style: none; margin: 0; padding: 0; }
+.tf-checks li + li { border-top: 1px solid var(--rule); }
+.tf-crow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 8px 0; color: var(--text); }
+.tf-cname { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.tf-cname .n { font-weight: 500; }
+.tf-cname .d { color: var(--dim); font-size: 12px; line-height: 16px; }
+.tf-ccat { flex: none; color: var(--dim); font-size: 12px; }
+@container (max-width: 600px) {
+  .tf-crow { align-items: flex-start; }
+  .tf-ccat { display: none; }
+}
+
+/* screenshots */
+.tf-shots { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.tf-shot { position: relative; width: 96px; height: 68px; border-radius: 6px; overflow: hidden; background: var(--raised); }
+.tf-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tf-shot .rm { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 50%; background: rgba(19, 18, 23, 0.85); color: var(--text); cursor: pointer; }
+.tf-shot .rm:hover { background: #000; }
+.tf-shot .rm svg { width: 12px; height: 12px; }
+
+/* summary */
+.tf-kv { margin-bottom: 16px; }
+.tf-kv dd { min-width: 0; }
+.tf-note { min-height: 20px; margin: 4px 0 20px; }
+.tf-note p + p { margin-top: 8px; }
+.tf-note .j-meta, .tf-warn-line { font-size: 12px; line-height: 18px; }
+.tf-actions { display: grid; gap: 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.tf-actions .j-btn { width: 100%; height: 38px; }
+.tf-actions .j-err { margin-bottom: 4px; }
+.tf-del { margin-top: 12px; }
+
+.tf-bar { display: none; }
+
+@media (max-width: 1280px) {
+  .tf { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+@media (max-width: 1100px) {
+  .tf { grid-template-columns: minmax(0, 1fr); }
+  .tf-side { position: static; }
+  .tf-save { display: none; }
+  .tf-bar { position: sticky; bottom: 0; z-index: 35; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 calc(var(--pad) * -1); padding: 10px var(--pad); background: var(--ground); border-top: 1px solid var(--line); }
+  .tf-bar .j-btn { height: 38px; padding: 0 20px; }
+  .tf-bar-fig { display: grid; min-width: 0; }
+  .tf-bar-score { font-size: 18px; font-weight: 500; line-height: 22px; }
+  .tf-bar-fig .j-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 860px) {
+  .tf-bar { bottom: calc(60px + env(safe-area-inset-bottom)); }
+  .tf-shot .rm { width: 32px; height: 32px; }
+  .tf-chip { height: 36px; }
+  .tf-opt .in { height: 40px; }
+  .tf-mrow .tf-opt .in { height: 36px; }
+  .tf-actions .j-btn { height: 40px; }
+}

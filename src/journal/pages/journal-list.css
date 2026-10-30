@@ -1,0 +1,91 @@
+/* Journal list: filters, the table and the phone list. Inspector styles live with the component. */
+
+.jl-search { position: relative; display: inline-flex; align-items: center; }
+.jl-search svg { position: absolute; left: 11px; width: 14px; height: 14px; color: var(--dim); pointer-events: none; }
+.jl-search .j-input { width: 220px; padding-left: 32px; }
+.jl-search input::-webkit-search-cancel-button { appearance: none; }
+.j-filters .j-select.sm { width: auto; }
+
+/* toggle: a ruled pill, selection marked by the accent line under its label */
+.jl-toggle { position: relative; height: 30px; padding: 0 12px; border: 1px solid var(--control); border-radius: 999px; background: transparent; color: var(--dim); font-size: 12px; font-weight: 500; cursor: pointer; transition: color 150ms ease, border-color 150ms ease; }
+.jl-toggle:hover { color: var(--text); border-color: #4b4b50; }
+.jl-toggle[aria-pressed="true"] { color: var(--text); }
+.jl-toggle[aria-pressed="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 4px; height: 1px; background: var(--sig); }
+.jl-clear { margin-left: 4px; }
+
+.jl-panel { padding: 8px 16px 0; overflow: hidden; }
+.jl-wrap { margin: 0 -8px; padding: 0 8px; container-type: inline-size; }
+.jl-table th, .jl-table td { padding: 0 8px; }
+.jl-table th:first-child, .jl-table td:first-child { padding-left: 12px; }
+.jl-table th:last-child, .jl-table td:last-child { padding-right: 12px; }
+.jl-table th.j-sort { padding: 0; }
+.jl-table th.j-sort button { display: inline-flex; align-items: center; gap: 4px; height: 38px; padding: 0 8px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.jl-table th.j-sort:first-child button { padding-left: 12px; }
+.jl-table th.j-sort:last-child button { padding-right: 12px; }
+.jl-table th.j-sort button svg { width: 12px; height: 12px; stroke-width: 1.75; }
+.jl-table th.j-sort[aria-sort="none"] button:hover { color: var(--text); }
+.jl-table th.n { text-align: right; }
+.jl-table td.id { font-weight: 500; }
+.jl-table td.id, .jl-setup, .jl-table td.mut, .jl-sess-sub { font-family: var(--font); letter-spacing: 0; }
+.jl-table td.id, .jl-table td.mut, .jl-setup { font-size: 13px; }
+.jl-setup { display: block; max-width: 17ch; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); }
+.jl-sess-sub { display: none !important; }
+.jl-table td.two .j-sub.j-mono { font-size: 11px; }
+.jl-table tbody tr:focus-visible { outline: none; }
+.jl-table tbody tr:focus-visible td { background: var(--active); }
+.jl-table tbody tr:focus-visible td:first-child { box-shadow: inset 1px 0 0 var(--sig), inset 0 0 0 0 transparent; }
+.jl-conf { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.jl-conf .j-num { font-size: 13px; line-height: 16px; }
+.jl-conf i { display: block; width: 36px; height: 2px; background: var(--rule); position: relative; }
+.jl-conf b { position: absolute; left: 0; top: 0; bottom: 0; background: var(--dim); }
+.jl-none td { height: auto; border-bottom: 0; padding: 0; }
+.jl-empty { display: grid; justify-items: center; gap: 12px; padding: 28px 0 32px; }
+.jl-empty .j-empty { border: 0; min-height: 0; padding: 0; width: auto; }
+
+.jl-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 48px; margin: 0 -16px; padding: 0 28px; border-top: 1px solid var(--rule); }
+.jl-skel-row { display: flex; align-items: center; gap: 24px; height: 52px; border-bottom: 1px solid var(--rule); }
+.jl-skel-row .grow { flex: 1; }
+
+/* the table gives up columns as its container narrows (the inspector takes 400px on desktop) */
+@container (max-width: 1000px) {
+  .c-sess { display: none; }
+  .jl-sess-sub { display: block !important; }
+}
+@container (max-width: 900px) { .c-size { display: none; } }
+@container (max-width: 780px) { .c-mist { display: none; } }
+@container (max-width: 720px) { .c-conf { display: none; } }
+@container (max-width: 640px) { .c-xy { display: none; } }
+
+/* phone list */
+.j-list-m { margin: 0 -16px; }
+.jl-item { display: grid; gap: 4px; width: 100%; min-height: 60px; padding: 10px 16px; border: 0; border-top: 1px solid var(--rule); background: none; color: inherit; text-align: left; cursor: pointer; }
+.jl-item:first-child { border-top: 0; }
+.jl-item:active { background: var(--active); }
+.jl-item .l1, .jl-item .l2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.jl-item .l1 .id { display: flex; align-items: baseline; gap: 0; min-width: 0; }
+.jl-item .l1 .id .j-side { align-self: center; }
+.jl-item .l1 b { font-size: 14px; font-weight: 600; margin-right: 10px; }
+.jl-item .l1 .j-num { font-size: 12px; }
+.jl-item .l1 > :last-child { font-size: 14px; }
+.jl-item .l2 { color: var(--dim); font-size: 12px; }
+.jl-item .l2 .j-trunc { max-width: none; min-width: 0; }
+
+.jl-chips { display: contents; }
+
+@media (max-width: 860px) {
+  .jl-panel { padding: 0 16px; }
+  /* search and period on their own lines; the selects and the toggle scroll sideways in one row */
+  .j-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .jl-search, .jl-search .j-input { width: 100%; }
+  .jl-chips { display: flex; align-items: center; gap: 8px; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 0 var(--pad); scrollbar-width: none; }
+  .jl-chips::-webkit-scrollbar { display: none; }
+  .jl-chips > * { flex: none; }
+  .j-filters .j-select.sm, .jl-search .j-input.sm, .jl-toggle { height: 40px; }
+  .j-filters .j-select.sm { width: auto; }
+  .jl-toggle[aria-pressed="true"]::after { bottom: 9px; }
+  .j-filters .j-spacer { display: none; }
+  .jl-clear { padding: 8px 4px; }
+  .j-filters .j-range { justify-content: space-between; }
+  .j-filters .j-range button { padding: 10px 0; }
+  .jl-foot { margin: 0 -16px; padding: 0 16px; height: 52px; }
+}

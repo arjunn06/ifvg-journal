@@ -1,0 +1,85 @@
+/* Accounts screen. Only what journal.css does not already give: a 4px mini track, the identity cell,
+   the account/transaction dialog grid, and the phone lists. Every class is prefixed ac- */
+
+.ac-back { margin: 12px 0 0; }
+.ac-back svg { width: 14px; height: 14px; }
+.ac-back + .j-title-row { padding-top: 8px; }
+
+/* identity cell: avatar, name, broker underneath */
+.ac-ident { display: inline-flex; align-items: center; min-width: 0; }
+.ac-name { display: grid; min-width: 0; line-height: 16px; }
+.ac-n { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.ac-page td.id.two { line-height: 16px; }
+.ac-page td.id .j-sub { margin-top: 1px; }
+
+/* progress cell: two lines, each a 4px track and a short fact */
+.ac-cell { min-width: 224px; }
+.ac-prog { display: grid; gap: 4px; padding: 6px 0; }
+.ac-prog > div { font-size: 12px; line-height: 16px; white-space: nowrap; }
+.ac-track { position: relative; display: inline-block; width: 88px; height: 4px; margin-right: 10px; vertical-align: 3px; border-radius: 2px; background: var(--raised); overflow: hidden; }
+.ac-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--text); }
+.ac-track.sig i { background: var(--sig); }
+.ac-track.warn i { background: var(--warning); }
+.ac-track.neg i { background: var(--negative); }
+/* names, notes and pills are words, not figures: the table's mono face is for numbers only */
+.ac-page td.id, .ac-page td.mut, .ac-page td .j-pill, .ac-page .ac-prog .j-dim, .ac-page .ac-status, .ac-page td.ac-cell { font-family: var(--font); }
+.ac-page .ac-prog .j-num { font-family: var(--mono); }
+
+.ac-status { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); }
+.ac-status .j-dot { width: 6px; height: 6px; }
+.ac-status.on { color: var(--text-2); }
+.ac-status.on .j-dot { color: var(--positive); }
+
+/* funding table */
+.ac-desc { max-width: 38ch; overflow: hidden; text-overflow: ellipsis; }
+.ac-page td.ac-act, .ac-page th.ac-act { width: 44px; padding: 0 0 0 4px; text-align: right; }
+.ac-act .j-icon-btn { width: 30px; height: 30px; }
+.ac-filter { display: inline-flex; align-items: center; gap: 8px; }
+.ac-filter .j-label { color: var(--dim); font-weight: 400; }
+.ac-filter .j-select.sm { width: auto; min-width: 152px; }
+.ac-first { display: grid; gap: 16px; justify-items: start; padding: 4px 0 8px; }
+.ac-first p { color: var(--text-2); max-width: 56ch; }
+
+/* detail */
+.ac-line { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ac-page .j-kv dd .j-pill { vertical-align: 1px; }
+
+/* dialog */
+.ac-form { display: grid; gap: 16px; }
+.ac-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.ac-fields > .full, .ac-fields > .ac-switch.full { grid-column: 1 / -1; }
+.ac-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
+.ac-switch > span { display: grid; gap: 2px; min-width: 0; }
+.ac-switch b { font-weight: 500; color: var(--text); }
+.ac-switch .j-hint { color: var(--dim); font-size: 12px; font-weight: 400; }
+.ac-active .ac-switch { min-height: 36px; justify-content: flex-start; gap: 12px; }
+.ac-prop { padding: 12px 0 0; border-top: 1px solid var(--line); }
+.ac-well { display: grid; gap: 14px; padding: 16px; border-radius: 8px; background: var(--ground); }
+.ac-well h3 { font-size: 13px; font-weight: 600; }
+.ac-form input[type="date"] { color-scheme: dark; }
+
+/* phone rows: identity and the key figure on line 1, the rest in grey on line 2 */
+.ac-page .j-list-m { margin: 0 -4px; }
+.ac-mrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; column-gap: 10px; row-gap: 8px; width: 100%; min-height: 56px; padding: 10px 4px; border: 0; border-top: 1px solid var(--rule); background: none; color: inherit; text-align: left; font: inherit; cursor: default; }
+.ac-mrow:first-child { border-top: 0; }
+button.ac-mrow { cursor: pointer; }
+.ac-mrow .j-avatar { margin-right: 0; }
+.ac-mrow .grow { display: grid; min-width: 0; line-height: 18px; }
+.ac-mrow .t { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-mrow .s { color: var(--dim); font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-mrow .ac-right { display: grid; justify-items: end; line-height: 18px; text-align: right; }
+.ac-mrow .ac-right .s { overflow: visible; }
+.ac-mrow.acc { grid-template-columns: auto minmax(0, 1fr) auto; }
+.ac-mrow .ac-mprog { grid-column: 2 / -1; }
+.ac-mrow .ac-prog { padding: 0; }
+.ac-mrow .j-icon-btn { width: 40px; height: 40px; margin-right: -8px; }
+
+@media (max-width: 860px) {
+  .ac-fields { grid-template-columns: minmax(0, 1fr); }
+  .ac-filter { display: grid; gap: 4px; flex: 1 1 140px; }
+  .ac-filter .j-select.sm { width: 100%; }
+  .ac-page .j-filters { align-items: end; }
+}
+
+/* a long form keeps its actions in reach */
+.j-dialog:has(.ac-form) footer { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--rule); }
