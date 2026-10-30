@@ -93,13 +93,14 @@ export default function Overview() {
   });
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
   const weekLabel = `${new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(weekStart)} – ${new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(weekEnd)}`;
-  const allBalances = accounts.reduce<Record<string, number>>((totals, account) => {
+  const scopedBalances = scopeAccounts.reduce<Record<string, number>>((totals, account) => {
     totals[account.currency] = (totals[account.currency] ?? 0) + accountEquity(account, J.trades, transactions);
     return totals;
   }, {});
-  const totalBalance = Object.entries(allBalances).length
-    ? Object.entries(allBalances).map(([cur, value]) => <span key={cur} style={{ display: 'block' }}>{money(value, cur)}</span>)
+  const currentBalance = Object.entries(scopedBalances).length
+    ? Object.entries(scopedBalances).map(([cur, value]) => <span key={cur} style={{ display: 'block' }}>{money(value, cur)}</span>)
     : '—';
+  const balanceLabel = scope === 'all' ? 'Current balance · active accounts' : `Current balance · ${scopeAccounts[0]?.name ?? 'selected account'}`;
   const weekControls = <div className="ov-week-control" aria-label={`Week of ${weekLabel}`}>
     <button className="j-icon-btn" aria-label="Previous week" onClick={() => setWeekStart((d) => { const x = new Date(d); x.setDate(x.getDate() - 7); return x; })}><ArrowLeft /></button>
     <span className="j-btn" aria-live="polite">{weekLabel}</span>
@@ -123,7 +124,7 @@ export default function Overview() {
       <>
         <PageHeader title="Weekly overview" sub={`${today} · ${scopeLabel ?? 'No accounts yet'}`} actions={weekControls} />
         {weekStrip}
-        <Kpis items={[{ label: 'Current balance · all accounts', lead: true, value: totalBalance, note: `${accounts.length} accounts · grouped by currency` }]} />
+        <Kpis items={[{ label: balanceLabel, lead: true, value: currentBalance, note: `${scopeAccounts.length} ${scopeAccounts.length === 1 ? 'account' : 'accounts'} · grouped by currency` }]} />
         <Panel title="Your journal is empty">
           <p style={{ color: 'var(--text-2)', maxWidth: '56ch', marginBottom: 16 }}>
             Log a trade the moment you close it: the setup, the checklist, what you felt. The numbers on this screen build themselves from those rows.
@@ -158,7 +159,7 @@ export default function Overview() {
       {weekStrip}
 
       <Kpis items={[
-        { label: 'Current balance · all accounts', lead: true, value: totalBalance, note: `${accounts.length} accounts · grouped by currency` },
+        { label: balanceLabel, lead: true, value: currentBalance, note: `${scopeAccounts.length} ${scopeAccounts.length === 1 ? 'account' : 'accounts'} · grouped by currency` },
         { label: 'Net result', tone: s.net < 0 ? 'neg' : 'flat', value: money(s.net, currency, { sign: true }),
           note: netDelta != null ? <><b>{money(netDelta, currency, { sign: true })}</b> vs prior {periodLabel}</> : `${int(s.count)} closed trades` },
         { label: 'Win rate', value: pct(s.winRate), note: `${s.wins} won · ${s.losses} lost · ${s.flat} flat` },
