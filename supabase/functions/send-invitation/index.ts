@@ -31,6 +31,7 @@ const InvitationEmail = ({ email, token, inviterName, inviteUrl }: {
     Head,
     Heading,
     Html,
+    Img,
     Link,
     Preview,
     Text,
@@ -46,7 +47,7 @@ const InvitationEmail = ({ email, token, inviterName, inviteUrl }: {
         // Header with branding
         React.createElement(Section, { style: header },
           React.createElement('div', { style: logoContainer },
-            React.createElement('div', { style: logoIcon }, '🎉'),
+            React.createElement(Img, { src: LOGO_URL, width: '40', height: '40', alt: '', style: logoIcon }),
             React.createElement(Text, { style: logoText }, 'IFVG Journal')
           ),
           React.createElement(Text, { style: tagline }, 'Beta Trading Platform')
@@ -138,8 +139,11 @@ const logoContainer = {
   marginBottom: '8px',
 };
 
+// Hosted by the web app (public/ifvg-logo.png); email clients can't render the SVG.
+const LOGO_URL = 'https://journal.ifvg.in/ifvg-logo.png';
+
 const logoIcon = {
-  fontSize: '28px',
+  display: 'block',
 };
 
 const logoText = {

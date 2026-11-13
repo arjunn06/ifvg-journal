@@ -4,17 +4,11 @@ import { X } from 'lucide-react';
 import { money, signed, tone } from '../format';
 import { PERIODS, type Period } from '../analytics';
 
-/** The IFVG mark: three candles and the imbalance between the first and the third. */
+/** The IFVG mark: the logo artwork, white for the dark ground, in a box with a little air around it. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
-      <rect x="4" y="16" width="5" height="8" fill="#fff" />
-      <line x1="6.5" y1="13" x2="6.5" y2="27" stroke="#fff" strokeWidth="1.2" />
-      <rect x="11.5" y="8" width="5" height="11" fill="#fff" />
-      <line x1="14" y1="4" x2="14" y2="22" stroke="#fff" strokeWidth="1.2" />
-      <rect x="19" y="3" width="5" height="9" fill="#fff" />
-      <line x1="21.5" y1="1" x2="21.5" y2="14" stroke="#fff" strokeWidth="1.2" />
-      <rect x="4" y="12" width="20" height="4" fill="var(--sig)" />
+    <svg width={size} height={size} viewBox="36 32 120 120" fill="none" aria-hidden="true">
+      <path d="M53 135L74.5 113.5L96 92L117.5 70.5H139V135H117.5V102.75L85.25 135H53ZM139 70.5H117.5L139 49V70.5Z" fill="#fff" />
     </svg>
   );
 }

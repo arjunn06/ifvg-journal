@@ -6,6 +6,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -43,7 +44,7 @@ export const GeneralNotificationEmail = ({
         {/* Header with branding */}
         <Section style={header}>
           <div style={logoContainer}>
-            <div style={logoIcon}>📧</div>
+            <Img src={LOGO_URL} width="40" height="40" alt="" style={logoIcon} />
             <Text style={logoText}>IFVG Journal</Text>
           </div>
           <Text style={tagline}>Professional Trading Analytics</Text>
@@ -140,8 +141,11 @@ const logoContainer = {
   marginBottom: '8px',
 };
 
+// Hosted by the web app (public/ifvg-logo.png); email clients can't render the SVG.
+const LOGO_URL = 'https://journal.ifvg.in/ifvg-logo.png';
+
 const logoIcon = {
-  fontSize: '28px',
+  display: 'block',
 };
 
 const logoText = {

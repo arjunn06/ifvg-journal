@@ -1,17 +1,24 @@
 import SwiftUI
 
-/// The IFVG mark: three candles over a blue range bar (the web logo, drawn natively so it stays crisp).
+/// The IFVG mark: the logo glyph, white on the dark tile (the web logo, drawn natively so it stays crisp).
 struct LogoMark: View {
     var size: CGFloat = 84
     var body: some View {
         Canvas { ctx, s in
-            let k = s.width / 28
-            func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ c: Color) {
-                ctx.fill(Path(CGRect(x: x * k, y: y * k, width: w * k, height: h * k)), with: .color(c))
+            // The master artwork's glyph spans 86 units centred on (96, 92); it fills 60% of the tile.
+            let k = s.width * 0.6 / 86
+            func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+                CGPoint(x: s.width / 2 + (x - 96) * k, y: s.height / 2 + (y - 92) * k)
             }
-            rect(6.5 - 0.6, 13, 1.2, 14, .white); rect(14 - 0.6, 4, 1.2, 18, .white); rect(21.5 - 0.6, 1, 1.2, 13, .white)
-            rect(4, 16, 5, 8, .white); rect(11.5, 8, 5, 11, .white); rect(19, 3, 5, 9, .white)
-            rect(4, 12, 20, 4, Color(red: 0.29, green: 0.54, blue: 0.84))
+            var shape = Path()
+            shape.move(to: p(53, 135))
+            shape.addLines([p(74.5, 113.5), p(96, 92), p(117.5, 70.5), p(139, 70.5), p(139, 135),
+                            p(117.5, 135), p(117.5, 102.75), p(85.25, 135)])
+            shape.closeSubpath()
+            shape.move(to: p(139, 70.5))
+            shape.addLines([p(117.5, 70.5), p(139, 49)])
+            shape.closeSubpath()
+            ctx.fill(shape, with: .color(.white))
         }
         .frame(width: size, height: size)
         .background(Color(red: 0.09, green: 0.09, blue: 0.10), in: RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
