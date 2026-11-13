@@ -8,8 +8,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The app is one dark system (see journal/journal.css). These variables only exist so the
-   remaining shadcn primitives (dialogs, selects, inputs on older screens) render in the same palette. */
+/* The app's palette lives in journal/journal.css, dark by default with a light theme on <html data-theme="light">.
+   These variables only exist so the remaining shadcn primitives (dialogs, selects, inputs on older screens)
+   render in the same palette, so each theme has a block here that tracks it. */
 @layer base {
   :root, .dark {
     --background: 240 4% 9%;
@@ -69,6 +70,65 @@
     --shadow-red: 0 0 #0000;
     --focus-ring: 212 63% 56% / 0.5;
     --hover-overlay: 0 0% 100% / 0.04;
+  }
+
+  /* Light theme for the same shadcn roles; values track the --ground/--surface/--text set in journal/journal.css. */
+  :root[data-theme="light"], .light {
+    --background: 240 10% 96%;
+    --foreground: 240 7% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 7% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 7% 8%;
+    --primary: 240 7% 8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 92%;
+    --secondary-foreground: 240 7% 8%;
+    --muted: 240 10% 92%;
+    --muted-foreground: 228 5% 40%;
+    --accent: 240 8% 93%;
+    --accent-foreground: 240 7% 8%;
+    --destructive: 349 59% 49%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 159 64% 29%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 92% 28%;
+    --warning-foreground: 0 0% 100%;
+    --border: 240 9% 90%;
+    --input: 232 7% 78%;
+    --ring: 214 63% 44%;
+
+    --sidebar-background: 240 10% 96%;
+    --sidebar-foreground: 228 6% 30%;
+    --sidebar-primary: 214 63% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 8% 93%;
+    --sidebar-accent-foreground: 240 7% 8%;
+    --sidebar-border: 240 9% 90%;
+    --sidebar-ring: 214 63% 44%;
+
+    --profit: 159 64% 29%;
+    --loss: 349 59% 49%;
+    --breakeven: 228 5% 40%;
+    --brand-red: 349 59% 49%;
+    --brand-red-glow: 349 59% 49%;
+    --brand-purple: 228 5% 40%;
+    --brand-gold: 40 92% 28%;
+    --brand-blue: 214 63% 44%;
+    --brand-gradient-start: 240 10% 96%;
+    --brand-gradient-end: 240 10% 96%;
+    --surface-elevated: 0 0% 100%;
+    --surface-hover: 240 11% 95%;
+    --text-subtle: 228 5% 40%;
+    --text-disabled: 228 5% 62%;
+    --glass-bg: 0 0% 100%;
+    --glass-border: 240 9% 90%;
+    --shadow-sm: 0 1px 2px 0 rgb(19 19 26 / 0.06);
+    --shadow-md: 0 6px 12px -2px rgb(19 19 26 / 0.08);
+    --shadow-lg: 0 12px 28px rgb(19 19 26 / 0.1);
+    --shadow-xl: 0 12px 28px rgb(19 19 26 / 0.1);
+    --focus-ring: 214 63% 44% / 0.4;
+    --hover-overlay: 240 7% 8% / 0.04;
   }
 }
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Mark } from '../ui/kit';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { money, monthLabel, signed } from '../format';
 import { landingData } from '../landing/data';
 import { useFitText, useReveal } from '../landing/hooks';
@@ -106,6 +107,7 @@ export default function Landing() {
           <a href="#plans">Plans</a>
         </nav>
         <div className="lp-nav-end">
+          <ThemeToggle />
           <Link to="/auth" className="lp-text">Sign in</Link>
           <Link to="/auth" className="lp-btn sm">Start journaling</Link>
         </div>

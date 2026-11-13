@@ -12,8 +12,6 @@
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
-  --lp-step: #1a191e;
-  --lp-band: #1c1b20;
   background: var(--ground);
   color: var(--text);
   font-family: var(--font);
@@ -39,17 +37,18 @@
 .lp-nav .lp-text { text-decoration: none; }
 
 /* ---------- controls ---------- */
-.lp-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 999px; background: #fff; color: #0b0b0d; font-size: 16px; font-weight: 600; text-decoration: none; white-space: nowrap; border: 0; cursor: pointer; transition: background-color 180ms ease, transform 140ms var(--ease-out); }
-.lp-btn:hover { background: #e4e4e6; }
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 999px; background: var(--text); color: var(--on-text); font-size: 16px; font-weight: 600; text-decoration: none; white-space: nowrap; border: 0; cursor: pointer; transition: background-color 180ms ease, transform 140ms var(--ease-out); }
+.lp-btn:hover { background: color-mix(in srgb, var(--text) 89%, var(--on-text)); }
 .lp-btn:active { transform: translateY(1px) scale(0.99); }
 .lp-btn.sm { min-height: 40px; padding: 0 18px; font-size: 15px; }
-.lp-btn.ghost { background: #2e2d33; color: #fff; }
-.lp-btn.ghost:hover { background: #3a393f; }
-.lp-btn.dark { background: #0b0b0d; color: #fff; }
-.lp-btn.dark:hover { background: #26262a; }
+.lp-btn.ghost { background: var(--ghost); color: var(--text); }
+.lp-btn.ghost:hover { background: var(--ghost-hover); }
+/* the closing tile is inverted (white in dark mode, near-black in light), so its button is the inverse of the page's */
+.lp-btn.dark { background: var(--on-text); color: var(--text); }
+.lp-btn.dark:hover { background: color-mix(in srgb, var(--on-text) 85%, var(--text)); }
 .lp-text { font-size: 16px; color: var(--text); text-decoration: underline; text-decoration-color: var(--dim); text-underline-offset: 0.28em; text-decoration-thickness: 1px; transition: text-decoration-color 180ms ease, color 180ms ease; }
 .lp-text:hover { text-decoration-color: currentColor; }
-.lp-text.dark { color: #0b0b0d; text-decoration-color: #7a7a80; }
+.lp-text.dark { color: var(--on-text); text-decoration-color: #7a7a80; }
 .lp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 28px; }
 
 /* ---------- type ---------- */
@@ -145,7 +144,7 @@
 .lp-faq-list button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 44px; padding: 8px 0; border: 0; background: none; color: var(--text-2); font: inherit; font-size: 18px; text-align: left; cursor: pointer; transition: color 180ms ease; }
 .lp-faq-list li.on button, .lp-faq-list button:hover { color: var(--text); }
 .lp-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--control); transition: background-color 180ms ease; }
-.lp-faq-list li.on .lp-dot { background: #fff; }
+.lp-faq-list li.on .lp-dot { background: var(--text); }
 .lp-faq-pane { grid-column: 7 / -1; position: sticky; top: 96px; min-height: 260px; }
 .lp-faq-a { font-size: 26px; line-height: 1.3; letter-spacing: -0.01em; max-width: 36ch; animation: lp-fade 150ms ease both; text-wrap: pretty; }
 .lp-faq-a a { text-decoration: underline; text-underline-offset: 0.2em; }
@@ -155,9 +154,9 @@
 .lp-cta { padding-inline: 0; }
 .lp-cta-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 8fr) minmax(0, 2fr); gap: 12px; }
 .lp-tile { height: 360px; overflow: hidden; }
-.lp-tile-c { background: #fff; color: #0b0b0d; padding: 40px clamp(24px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+.lp-tile-c { background: var(--text); color: var(--on-text); padding: 40px clamp(24px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: 16px; }
 .lp-cta-h { font-size: var(--s-h2); line-height: 1.06; letter-spacing: -0.03em; font-weight: 600; max-width: 16ch; }
-.lp-cta-p { font-size: 18px; max-width: 52ch; color: #1d1d20; }
+.lp-cta-p { font-size: 18px; max-width: 52ch; color: color-mix(in srgb, var(--on-text) 88%, var(--text)); }
 .lp-tile-c .lp-actions { margin-top: 8px; }
 
 /* ---------- footer ---------- */
@@ -293,6 +292,11 @@
 }
 
 /* ---------- reduced motion: finished states, no travel ---------- */
+/* The nav row is brand, theme switch, Sign in and the call to action; below this width the mark alone stands for the brand. */
+@media (max-width: 480px) {
+  .lp-brand span { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lp *, .lp *::before, .lp *::after { animation: none !important; transition-duration: 0.01ms !important; }
   .lp [data-r] { opacity: 1 !important; transform: none !important; }

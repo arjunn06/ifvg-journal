@@ -1,14 +1,14 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { money, signed, tone } from '../format';
 import { PERIODS, type Period } from '../analytics';
 
-/** The IFVG mark: the logo artwork, white for the dark ground, in a box with a little air around it. */
+/** The IFVG mark: the logo artwork in the text colour (white on the dark ground, ink on the light one), with a little air around it. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="36 32 120 120" fill="none" aria-hidden="true">
-      <path d="M53 135L74.5 113.5L96 92L117.5 70.5H139V135H117.5V102.75L85.25 135H53ZM139 70.5H117.5L139 49V70.5Z" fill="#fff" />
+      <path d="M53 135L74.5 113.5L96 92L117.5 70.5H139V135H117.5V102.75L85.25 135H53ZM139 70.5H117.5L139 49V70.5Z" fill="var(--text)" />
     </svg>
   );
 }
@@ -103,7 +103,8 @@ const HUES = [205, 155, 38, 350, 95, 185];
 export function hueFor(i: number) { return HUES[i % HUES.length]; }
 export function Avatar({ name, hue }: { name: string; hue: number }) {
   const ini = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('');
-  return <span className="j-avatar" style={{ background: `hsl(${hue} 32% 20%)`, color: `hsl(${hue} 62% 76%)` }} aria-hidden="true">{ini}</span>;
+  // Saturation and lightness come from the theme (--av-bg / --av-fg); only the hue is per account.
+  return <span className="j-avatar" style={{ '--h': hue } as CSSProperties} aria-hidden="true">{ini}</span>;
 }
 
 export function Empty({ children }: { children: ReactNode }) { return <div className="j-empty">{children}</div>; }

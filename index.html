@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Apply the saved theme before first paint so a light-mode visitor never sees a dark flash.
+         Mirrors ThemeProvider (same storage key, same default); with scripts off the page stays dark. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('ifvg-journal-theme');
+          if (t !== 'light' && t !== 'dark' && t !== 'system') t = 'dark';
+          var r = t === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : t;
+          var h = document.documentElement;
+          h.setAttribute('data-theme', r);
+          h.classList.add(r);
+          h.style.colorScheme = r;
+        } catch (e) {}
+      })();
+    </script>
     <title>IFVG Journal — Track every trade with patience, not dopamine</title>
     <meta name="description" content="IFVG Journal is the trading journal for the Arjun IFVG community. Track P&L, analyse ICT/iFVG setups, and review every session with the discipline of a pro." />
     <meta name="author" content="IFVG Journal" />

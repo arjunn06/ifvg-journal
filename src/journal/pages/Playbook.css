@@ -19,7 +19,7 @@
 .pb-list { display: grid; margin: 0 -12px; }
 .pb-item { position: relative; display: flex; align-items: center; gap: 12px; width: calc(100% - 0px); min-height: 56px; padding: 10px 12px; border: 0; border-top: 1px solid var(--rule); border-radius: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color 150ms ease; }
 .pb-item:first-child { border-top: 0; }
-.pb-item:hover { background: #17161b; }
+.pb-item:hover { background: var(--row-hover); }
 .pb-item[aria-selected="true"] { background: var(--active); }
 .pb-item[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--sig); }
 .pb-item .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
@@ -96,7 +96,7 @@
 .pb-title-in { height: 40px; font-size: 16px; font-weight: 600; }
 .pb-content { min-height: 300px; font-size: 14px; line-height: 22px; }
 .pb-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 36px; padding: 5px 8px; border: 1px solid var(--control); border-radius: 8px; background: var(--ground); transition: border-color 150ms ease; }
-.pb-tags:hover { border-color: #4b4b50; }
+.pb-tags:hover { border-color: var(--control-hover); }
 .pb-tags:focus-within { border-color: var(--sig); }
 .pb-tags .j-chip { height: 24px; }
 .pb-tags .j-chip button { width: 16px; height: 16px; place-items: center; }

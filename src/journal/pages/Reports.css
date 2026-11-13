@@ -31,7 +31,7 @@
 .rp-list p.j-meta { padding-top: 12px; }
 .rp-box { appearance: none; width: 18px; height: 18px; border: 1px solid var(--control); border-radius: 3px; background: var(--ground); display: inline-grid; place-items: center; flex: none; cursor: pointer; vertical-align: middle; }
 .rp-box:checked { background: var(--text); border-color: var(--text); }
-.rp-box:checked::after { content: ""; width: 8px; height: 4px; border: 2px solid #0b0b0d; border-top: 0; border-right: 0; transform: translateY(-1px) rotate(-45deg); }
+.rp-box:checked::after { content: ""; width: 8px; height: 4px; border: 2px solid var(--on-text); border-top: 0; border-right: 0; transform: translateY(-1px) rotate(-45deg); }
 
 /* matrix */
 .rp-matrix { display: grid; gap: 4px; }

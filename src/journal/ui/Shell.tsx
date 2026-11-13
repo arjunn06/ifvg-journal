@@ -6,7 +6,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useJournal, exitDemo } from '../JournalProvider';
 import { accountEquity } from '../analytics';
 import { money, isoDate, initials } from '../format';
+import { useTheme } from '@/providers/ThemeProvider';
 import { Avatar, Mark, hueFor, usePopover } from './kit';
+import { THEMES } from './ThemeToggle';
 import { QuickLogProvider, useQuickLog } from '../quicklog/QuickLog';
 
 const NAV = [
@@ -59,6 +61,7 @@ function UserMenu() {
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
   const { isDemo } = useJournal();
+  const { theme, setTheme } = useTheme();
   const nav = useNavigate();
   const { open, setOpen, ref } = usePopover();
   const name = (user?.user_metadata?.display_name as string) || user?.email?.split('@')[0] || (isDemo ? 'Sample trader' : 'Account');
@@ -71,6 +74,11 @@ function UserMenu() {
         <div className="j-pop" style={{ top: 40, right: 0 }}>
           <div className="j-grp" style={{ textTransform: 'none' }}>{isDemo ? 'Sample data' : user?.email}</div>
           {!isPremium && !isDemo && <button onClick={() => { setOpen(false); nav('/upgrade'); }}><Sparkles size={15} /> Upgrade</button>}
+          <div className="j-grp">Theme</div>
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <button key={value} role="menuitemradio" aria-checked={theme === value} onClick={() => setTheme(value)}><Icon size={15} /> {label}</button>
+          ))}
+          <div className="j-sep" />
           {isDemo ? (
             <button onClick={exitDemo}><X size={15} /> Exit sample data</button>
           ) : (
@@ -82,25 +90,30 @@ function UserMenu() {
   );
 }
 
+type PaletteItem = { key: string; label: string; hint: string; to?: string; run?: () => void };
+
 function Palette({ onClose }: { onClose: () => void }) {
   const { trades, accounts } = useJournal();
+  const { resolvedTheme, setTheme } = useTheme();
   const { open: openLog } = useQuickLog();
   const nav = useNavigate();
   const [q, setQ] = useState('');
   const [i, setI] = useState(0);
   const items = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const pages = NAV.map((n) => ({ key: n.to, label: n.label, hint: 'Go to', to: n.to }));
+    const pages: PaletteItem[] = NAV.map((n) => ({ key: n.to, label: n.label, hint: 'Go to', to: n.to }));
     pages.push({ key: '/trades/new', label: 'Log a trade', hint: 'Action', to: '/trades/new' });
+    const light = resolvedTheme === 'light';
+    pages.push({ key: 'theme', label: light ? 'Switch to dark theme' : 'Switch to light theme', hint: 'Action', run: () => setTheme(light ? 'dark' : 'light') });
     if (!s) return pages;
     const tr = trades
       .filter((t) => t.symbol.toLowerCase().includes(s) || (t.notes ?? '').toLowerCase().includes(s) || isoDate(t.entry_date).includes(s))
       .slice(0, 8)
       .map((t) => ({ key: t.id, label: `${t.symbol} ${t.trade_type} · ${isoDate(t.entry_date)}`, hint: accounts.find((a) => a.id === t.trading_account_id)?.name ?? 'Trade', to: `/trades/${t.id}` }));
     return [...pages.filter((p) => p.label.toLowerCase().includes(s)), ...tr];
-  }, [q, trades, accounts]);
+  }, [q, trades, accounts, resolvedTheme, setTheme]);
   useEffect(() => setI(0), [q]);
-  const go = (to: string) => { onClose(); if (to === '/trades/new') openLog(); else nav(to); };
+  const go = (it: PaletteItem) => { onClose(); if (it.run) it.run(); else if (it.to === '/trades/new') openLog(); else if (it.to) nav(it.to); };
   return (
     <div className="j-app" style={{ display: 'block', minHeight: 0, background: 'none' }}>
       <div className="j-scrim" onClick={onClose} />
@@ -108,12 +121,12 @@ function Palette({ onClose }: { onClose: () => void }) {
         if (e.key === 'Escape') onClose();
         if (e.key === 'ArrowDown') { e.preventDefault(); setI((x) => Math.min(items.length - 1, x + 1)); }
         if (e.key === 'ArrowUp') { e.preventDefault(); setI((x) => Math.max(0, x - 1)); }
-        if (e.key === 'Enter' && items[i]) go(items[i].to);
+        if (e.key === 'Enter' && items[i]) go(items[i]);
       }}>
         <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search symbols, notes, dates, pages" aria-label="Search" />
         <div className="list j-pop" style={{ position: 'static', boxShadow: 'none', background: 'transparent' }}>
           {items.map((it, n) => (
-            <button key={it.key} aria-selected={n === i} onMouseEnter={() => setI(n)} onClick={() => go(it.to)}>
+            <button key={it.key} aria-selected={n === i} onMouseEnter={() => setI(n)} onClick={() => go(it)}>
               <span style={{ flex: 1, color: 'var(--text)' }}>{it.label}</span>
               <span className="j-meta">{it.hint}</span>
             </button>
