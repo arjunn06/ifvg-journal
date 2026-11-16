@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import * as A from '../analytics';
 import { SESSIONS } from '../types';
-import { compact, dec2, int, money, monthLabel, pct, rMult, signed } from '../format';
+import { compactPlain as compact, dec2, int, moneyPlain as money, monthLabel, pct, rMult, signed } from '../format';
 import { Histogram, LineChart, Matrix } from '../ui/charts';
 import { Kpis, Panel, PnL, RankList, Range } from '../ui/kit';
 import { landingData } from './data';

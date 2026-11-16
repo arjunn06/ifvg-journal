@@ -49,7 +49,8 @@ export default function Reports() {
   const [span, setSpan] = useState<Span>('weeks');
 
   const s = useMemo(() => summarize(viewTrades), [viewTrades]);
-  const finding = useMemo(() => topFinding(viewTrades, strategies, mistakes, currency), [viewTrades, strategies, mistakes, currency]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the text is built by formatters that follow the header's view, so a change of view must rebuild it
+  const finding = useMemo(() => topFinding(viewTrades, strategies, mistakes, currency), [viewTrades, strategies, mistakes, currency, J.view]);
   const periods = useMemo(() => buildPeriods(scopeTrades, mistakes, span), [scopeTrades, mistakes, span]);
 
   if (loading) return <Loading tab={tab} />;

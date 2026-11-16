@@ -63,6 +63,19 @@ Tables not covered by the provider (strategies CRUD, confluence items, notes, ac
 directly with `supabase.from(...)` then `await refresh()`; when `isDemo` is true skip the network and tell the user the change is not saved
 (or keep it in local state). Never call `supabase` in demo mode.
 
+## Amounts follow the header switch ($ / % / hidden)
+
+The top bar's `$ % ⌀` switch (`ui/Shell.tsx` → `ViewSwitcher`, state in `view.ts`, saved in localStorage) changes how every amount prints:
+**money** `$1,240.00`, **percent** `+2.48%` of the starting balance, **hidden** `•••` with each result still green or red.
+It only works if amounts go through the formatters; never build a currency string by hand.
+
+- Amounts: `money()`, `signedMoney()` (no currency sign: calendar cells, heat maps), `compact()`, `<PnL>`. R multiples, counts and win rate use `signed`, `rMult`, `pct` and never change.
+- Percent divides by the starting balance of the scope. When a figure belongs to one account (an account's page or row, a trade, the scope list) pass `{ base: account.initial_balance }` (`<PnL base>`, `<LineChart base>`).
+- A result shown as a plain string in `<Kpis>` also gets `result: <number>`, so hidden view can colour it. A share of the account (drawdown as % of the start) goes through `unlessHidden()`.
+- `useMemo` that builds text with these functions needs `useJournal().view` in its deps, or it keeps the old view.
+- A figure the user is typing or confirming (balance dialog, onboarding, the form's "Auto" hint) pins `{ mode: 'money' }`. CSV export and anything saved never uses these functions.
+- The landing page and sign-in preview always show money: wrap them in `<PlainFigures>` and import `moneyPlain` / `compactPlain`.
+
 ## Checking your work
 
 ```bash

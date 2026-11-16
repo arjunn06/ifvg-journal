@@ -20,11 +20,11 @@ export function Edge({ trades, s, currency, strategies, periodLabel }: { trades:
   return (
     <>
       <Kpis items={[
-        { label: 'Net result', lead: true, tone: s.net < 0 ? 'neg' : 'flat', value: money(s.net, currency, { sign: true }), note: `${n} closed trades · ${periodLabel}` },
+        { label: 'Net result', lead: true, tone: s.net < 0 ? 'neg' : 'flat', result: s.net, value: money(s.net, currency, { sign: true }), note: `${n} closed trades · ${periodLabel}` },
         { label: 'Win rate', value: pct(s.winRate, 1), note: `${s.wins} won · ${s.losses} lost · ${s.flat} flat` },
         { label: 'Profit factor', value: s.profitFactor == null ? '—' : dec2(s.profitFactor), note: s.profitFactor == null ? 'needs a loss' : `${money(s.grossWin, currency, { decimals: 0 })} won / ${money(s.grossLoss, currency, { decimals: 0 })} lost` },
         { label: 'Average R', value: rMult(s.avgR), tone: s.avgR != null && s.avgR < 0 ? 'neg' : 'flat', note: `${s.rCount} trades with risk set` },
-        { label: 'Expectancy', value: s.expectancy == null ? '—' : money(s.expectancy, currency, { sign: true }), tone: s.expectancy != null && s.expectancy < 0 ? 'neg' : 'flat', unit: 'a trade', note: 'net / closed trades' },
+        { label: 'Expectancy', value: s.expectancy == null ? '—' : money(s.expectancy, currency, { sign: true }), tone: s.expectancy != null && s.expectancy < 0 ? 'neg' : 'flat', result: s.expectancy, unit: 'a trade', note: 'net / closed trades' },
         { label: 'Payoff', value: s.payoff == null ? '—' : dec2(s.payoff), note: s.avgWin != null && s.avgLoss != null ? `avg win ${money(s.avgWin, currency, { decimals: 0 })} / avg loss ${money(s.avgLoss, currency, { decimals: 0 })}` : 'needs a win and a loss' },
       ]} />
 

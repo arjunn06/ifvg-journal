@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useJournal } from '../../JournalProvider';
 import { int, isoDate, money } from '../../format';
+import { useViewMode } from '../../view';
 import { Avatar, ConfirmDialog, Empty, Kpis, Panel, hueFor } from '../../ui/kit';
 import { removeTransaction } from './api';
 import { TypePill, currencyOf, mixedCurrency } from './bits';
@@ -11,14 +12,17 @@ import { DemoReadOnly, TX_TYPES, cashTotals, txLabel, txSigned } from './model';
 import { TransactionDialog } from './TransactionDialog';
 import type { Transaction } from '../../types';
 
-export function fundingSummary(rows: Transaction[], currency: string) {
+/** `base`: the starting balance percent view divides by (the accounts the rows belong to). */
+export function fundingSummary(rows: Transaction[], currency: string, base?: number) {
   const c = cashTotals(rows);
-  return `${int(rows.length)} ${rows.length === 1 ? 'entry' : 'entries'}. Net cash position ${money(c.net, currency, { sign: true })}: ${money(c.withdrawals + c.payouts, currency)} received against ${money(c.deposits + c.fees, currency)} put in or spent.`;
+  return `${int(rows.length)} ${rows.length === 1 ? 'entry' : 'entries'}. Net cash position ${money(c.net, currency, { sign: true, base })}: ${money(c.withdrawals + c.payouts, currency, { base })} received against ${money(c.deposits + c.fees, currency, { base })} put in or spent.`;
 }
 
-export function Amount({ tx, currency }: { tx: Transaction; currency: string }) {
+export function Amount({ tx, currency, base }: { tx: Transaction; currency: string; base?: number }) {
+  const mode = useViewMode();
   const v = txSigned(tx);
-  return <span className={`j-num ${v > 0 ? 'j-pos' : ''}`}>{money(v, currency, { sign: true })}</span>;
+  // Money coming in is green; with figures hidden, money going out is red so the colour still says which way it moved.
+  return <span className={`j-num ${v > 0 ? 'j-pos' : mode === 'hidden' && v < 0 ? 'j-neg' : ''}`}>{money(v, currency, { sign: true, base, mode })}</span>;
 }
 
 export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: {
@@ -47,6 +51,7 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
   const cur = account !== 'all' ? accOf(account)?.currency ?? 'USD' : currencyOf(shownAccounts.length ? shownAccounts : J.accounts);
   const mixed = mixedCurrency(shownAccounts);
   const c = cashTotals(rows);
+  const base = shownAccounts.reduce((t, a) => t + a.initial_balance, 0);
   const filtered = account !== 'all' || type !== 'all';
   const note = mixed ? 'Mixed currencies, not converted' : undefined;
 
@@ -65,10 +70,10 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
 
   const delBody = del && (
     <>
-      <span>Delete the {money(del.amount, accOf(del.trading_account_id)?.currency ?? cur)} {txLabel(del.transaction_type).toLowerCase()} dated {isoDate(del.transaction_date)}
+      <span>Delete the {money(del.amount, accOf(del.trading_account_id)?.currency ?? cur, { base: accOf(del.trading_account_id)?.initial_balance })} {txLabel(del.transaction_type).toLowerCase()} dated {isoDate(del.transaction_date)}
       {accOf(del.trading_account_id) ? <> from {accOf(del.trading_account_id)!.name}</> : null}? </span>
       <span>{del.transaction_type === 'balance_adjustment'
-        ? `That account's current balance changes by ${money(del.amount, accOf(del.trading_account_id)?.currency ?? cur, { sign: true })}.`
+        ? `That account's current balance changes by ${money(del.amount, accOf(del.trading_account_id)?.currency ?? cur, { sign: true, base: accOf(del.trading_account_id)?.initial_balance })}.`
         : del.transaction_type === 'deposit' || del.transaction_type === 'payout' || del.transaction_type === 'withdrawal'
           ? `That account's equity ${del.transaction_type === 'withdrawal' ? 'goes up' : 'goes down'} by the same amount.`
           : 'Equity does not change, but the cost leaves your totals.'}</span>
@@ -80,11 +85,11 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
     <>
       {J.transactions.length > 0 && (
         <Kpis items={[
-          { label: 'Net cash position', lead: true, tone: c.net < 0 ? 'neg' : 'flat', value: money(c.net, cur, { sign: true }), note: note ?? 'withdrawals + payouts − deposits − fees' },
-          { label: 'Deposits', value: money(c.deposits, cur), note: 'put into accounts' },
-          { label: 'Withdrawals', value: money(c.withdrawals, cur), note: 'taken out' },
-          { label: 'Payouts', value: money(c.payouts, cur), note: 'received from firms' },
-          { label: 'Fees paid', value: money(c.fees, cur), note: 'prop firm fees' },
+          { label: 'Net cash position', lead: true, tone: c.net < 0 ? 'neg' : 'flat', result: c.net, value: money(c.net, cur, { sign: true, base }), note: note ?? 'withdrawals + payouts − deposits − fees' },
+          { label: 'Deposits', value: money(c.deposits, cur, { base }), note: 'put into accounts' },
+          { label: 'Withdrawals', value: money(c.withdrawals, cur, { base }), note: 'taken out' },
+          { label: 'Payouts', value: money(c.payouts, cur, { base }), note: 'received from firms' },
+          { label: 'Fees paid', value: money(c.fees, cur, { base }), note: 'prop firm fees' },
         ]} />
       )}
 
@@ -126,8 +131,8 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
                         <td className="id">{a ? <span className="ac-ident"><Avatar name={a.name} hue={hueFor(idx(a.id))} />{a.name}</span> : <span className="j-dim">No account</span>}</td>
                         <td><TypePill type={x.transaction_type} /></td>
                         <td className="mut ac-desc">{x.description || '—'}</td>
-                        <td className="n"><Amount tx={x} currency={a?.currency ?? cur} /></td>
-                        <td className="ac-act"><button className="j-icon-btn" aria-label={`Delete ${txLabel(x.transaction_type).toLowerCase()} of ${money(x.amount, a?.currency ?? cur)}`} onClick={() => { setDelError(null); setDel(x); }}><Trash2 /></button></td>
+                        <td className="n"><Amount tx={x} currency={a?.currency ?? cur} base={a?.initial_balance} /></td>
+                        <td className="ac-act"><button className="j-icon-btn" aria-label={`Delete ${txLabel(x.transaction_type).toLowerCase()} of ${money(x.amount, a?.currency ?? cur, { base: a?.initial_balance })}`} onClick={() => { setDelError(null); setDel(x); }}><Trash2 /></button></td>
                       </tr>
                     );
                   })}
@@ -145,8 +150,8 @@ export function Funding({ initialAccount, addOpen, onAdd, onAddClose, onDemo }: 
                       <span className="t">{x.description || txLabel(x.transaction_type)}</span>
                       <span className="s"><span className="j-mono">{isoDate(x.transaction_date)}</span> · {txLabel(x.transaction_type)}{a ? ` · ${a.name}` : ''}</span>
                     </span>
-                    <Amount tx={x} currency={a?.currency ?? cur} />
-                    <button className="j-icon-btn" aria-label={`Delete ${txLabel(x.transaction_type).toLowerCase()} of ${money(x.amount, a?.currency ?? cur)}`} onClick={() => { setDelError(null); setDel(x); }}><Trash2 /></button>
+                    <Amount tx={x} currency={a?.currency ?? cur} base={a?.initial_balance} />
+                    <button className="j-icon-btn" aria-label={`Delete ${txLabel(x.transaction_type).toLowerCase()} of ${money(x.amount, a?.currency ?? cur, { base: a?.initial_balance })}`} onClick={() => { setDelError(null); setDel(x); }}><Trash2 /></button>
                   </div>
                 );
               })}

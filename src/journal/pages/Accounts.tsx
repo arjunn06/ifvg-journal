@@ -42,7 +42,7 @@ function Progress({ r }: { r: AccountRow }) {
         {room != null && a.max_loss_limit != null && (
           <div>
             <MiniTrack pct={r.roomPct ?? 0} tone={room <= 0 ? 'neg' : (r.roomPct ?? 0) < 25 ? 'warn' : 'sig'} label={`${Math.round(r.roomPct ?? 0)}% of the loss limit left`} />
-            <span className={`j-num ${room <= 0 ? 'j-neg' : ''}`}>{money(Math.max(0, room), a.currency, { decimals: 0 })}</span><span className="j-dim">{room <= 0 ? ' floor breached' : ' room to floor'}</span>
+            <span className={`j-num ${room <= 0 ? 'j-neg' : ''}`}>{money(Math.max(0, room), a.currency, { decimals: 0, base: a.initial_balance })}</span><span className="j-dim">{room <= 0 ? ' floor breached' : ' room to floor'}</span>
           </div>
         )}
         {p.target == null && room == null && <span className="j-dim">No limits set</span>}
@@ -53,7 +53,7 @@ function Progress({ r }: { r: AccountRow }) {
     return (
       <div className="ac-prog">
         <div><MiniTrack pct={r.goalPct} label={`${Math.round(r.goalPct)}% of the equity goal`} /><span className="j-num">{Math.round(r.goalPct)}%</span><span className="j-dim"> to goal</span></div>
-        <div><span className="j-dim">Goal </span><span className="j-num">{money(a.equity_goal, a.currency, { decimals: 0 })}</span></div>
+        <div><span className="j-dim">Goal </span><span className="j-num">{money(a.equity_goal, a.currency, { decimals: 0, base: a.initial_balance })}</span></div>
       </div>
     );
   }
@@ -117,6 +117,8 @@ export default function Accounts() {
   const mixed = mixedCurrency(rows.map((r) => r.account));
   const equity = rows.reduce((s, r) => s + r.equity, 0);
   const result = rows.reduce((s, r) => s + r.result, 0);
+  // Percent view: the starting balance of the accounts listed, which is not always the scope's (the list shows inactive ones too).
+  const rowsBase = rows.reduce((s, r) => s + r.account.initial_balance, 0);
   const cash = cashTotals(shownTx);
   const paper = rows.filter((r) => r.account.account_type !== 'live' && !r.account.is_prop_firm);
   const paperEquity = paper.reduce((s, r) => s + r.equity, 0);
@@ -126,10 +128,10 @@ export default function Accounts() {
   const showFunding = !empty && tab === 'funding';
 
   const sub = showFunding
-    ? fundingSummary(J.transactions, J.accounts[0]?.currency ?? 'USD')
+    ? fundingSummary(J.transactions, J.accounts[0]?.currency ?? 'USD', J.accounts.reduce((t, a) => t + a.initial_balance, 0))
     : empty
       ? 'Add the accounts you trade, then log what they cost and what they pay.'
-      : `${rows.length === 1 ? 'This account holds' : `${rows.length} accounts hold`} ${money(equity, cur, { decimals: 0 })}. Trading has ${result >= 0 ? 'made' : 'lost'} ${money(Math.abs(result), cur, { decimals: 0 })} since the start; fees have cost ${money(cash.fees, cur, { decimals: 0 })}.`;
+      : `${rows.length === 1 ? 'This account holds' : `${rows.length} accounts hold`} ${money(equity, cur, { base: rowsBase, decimals: 0 })}. Trading has ${result >= 0 ? 'made' : 'lost'} ${money(Math.abs(result), cur, { decimals: 0, base: rowsBase })} since the start; fees have cost ${money(cash.fees, cur, { base: rowsBase, decimals: 0 })}.`;
 
   const action = empty ? null : showFunding
     ? (J.transactions.length ? <button className="j-btn primary" onClick={() => setTxOpen(true)}><Plus /> Add transaction</button> : null)
@@ -163,11 +165,11 @@ export default function Accounts() {
       {!empty && tab === 'accounts' && (
         <>
           <Kpis items={[
-            { label: 'Total equity', lead: true, value: money(equity, cur), note: mixed ? 'Mixed currencies, not converted' : `across ${rows.length} ${rows.length === 1 ? 'account' : 'accounts'}${paper.length ? `, ${money(paperEquity, cur, { decimals: 0 })} of it on paper` : ''}` },
-            { label: 'Net result since start', tone: result < 0 ? 'neg' : 'flat', value: money(result, cur, { sign: true, decimals: 0 }), note: paper.length && paper.length < rows.length ? `${money(paperResult, cur, { sign: true, decimals: 0 })} of it on paper` : `${int(rows.reduce((s, r) => s + r.closed, 0))} closed trades` },
-            { label: 'Fees paid', value: money(cash.fees, cur, { decimals: 0 }), note: 'prop firm fees' },
-            { label: 'Withdrawn', value: money(cash.withdrawals, cur, { decimals: 0 }), note: cash.payouts ? `plus ${money(cash.payouts, cur, { decimals: 0 })} in payouts` : 'no payouts yet' },
-            { label: 'Net cash position', tone: cash.net < 0 ? 'neg' : 'flat', value: money(cash.net, cur, { sign: true, decimals: 0 }), note: 'cash out less cash in' },
+            { label: 'Total equity', lead: true, value: money(equity, cur, { base: rowsBase }), note: mixed ? 'Mixed currencies, not converted' : `across ${rows.length} ${rows.length === 1 ? 'account' : 'accounts'}${paper.length ? `, ${money(paperEquity, cur, { base: rowsBase, decimals: 0 })} of it on paper` : ''}` },
+            { label: 'Net result since start', tone: result < 0 ? 'neg' : 'flat', result, value: money(result, cur, { base: rowsBase, sign: true, decimals: 0 }), note: paper.length && paper.length < rows.length ? `${money(paperResult, cur, { base: rowsBase, sign: true, decimals: 0 })} of it on paper` : `${int(rows.reduce((s, r) => s + r.closed, 0))} closed trades` },
+            { label: 'Fees paid', value: money(cash.fees, cur, { base: rowsBase, decimals: 0 }), note: 'prop firm fees' },
+            { label: 'Withdrawn', value: money(cash.withdrawals, cur, { base: rowsBase, decimals: 0 }), note: cash.payouts ? `plus ${money(cash.payouts, cur, { base: rowsBase, decimals: 0 })} in payouts` : 'no payouts yet' },
+            { label: 'Net cash position', tone: cash.net < 0 ? 'neg' : 'flat', result: cash.net, value: money(cash.net, cur, { base: rowsBase, sign: true, decimals: 0 }), note: 'cash out less cash in' },
           ]} />
 
           <Panel title="Accounts and limits" meta={single ? `${rows.length} of ${J.accounts.length} shown` : `${rows.length} ${rows.length === 1 ? 'account' : 'accounts'}`}
@@ -192,8 +194,8 @@ export default function Accounts() {
                             </span>
                           </td>
                           <td><span className="j-pill">{kindLabel(r.account)}</span></td>
-                          <td className="n j-num">{money(r.equity, r.account.currency)}</td>
-                          <td className="n"><PnL v={r.result} currency={r.account.currency} /></td>
+                          <td className="n j-num">{money(r.equity, r.account.currency, { base: r.account.initial_balance })}</td>
+                          <td className="n"><PnL v={r.result} currency={r.account.currency} base={r.account.initial_balance} /></td>
                           <td className="ac-cell"><Progress r={r} /></td>
                           <td className="n j-num">{int(r.trades)}</td>
                           <td><StatusMark account={r.account} breached={r.breached} /></td>
@@ -212,8 +214,8 @@ export default function Accounts() {
                         <span className="s">{kindLabel(r.account)} · {r.account.broker || 'No broker'}{r.account.is_active ? '' : ' · Inactive'}{r.breached ? ' · Breached' : ''}</span>
                       </span>
                       <span className="ac-right">
-                        <span className="j-num">{money(r.equity, r.account.currency, { decimals: 0 })}</span>
-                        <span className="s"><PnL v={r.result} currency={r.account.currency} decimals={0} /> since start</span>
+                        <span className="j-num">{money(r.equity, r.account.currency, { decimals: 0, base: r.account.initial_balance })}</span>
+                        <span className="s"><PnL v={r.result} currency={r.account.currency} decimals={0} base={r.account.initial_balance} /> since start</span>
                       </span>
                       {(r.prop || r.goalPct != null) && <span className="ac-mprog"><Progress r={r} /></span>}
                     </button>

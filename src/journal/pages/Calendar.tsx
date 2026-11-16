@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useJournal } from '../JournalProvider';
 import { byStrategy, dailyMap, dayKey, monthGrid, summarize, rOf, type Day } from '../analytics';
-import { compact, int, isoDate, money, monthLabel, pct, signed, timeHM } from '../format';
+import { compact, int, isoDate, money, monthLabel, pct, signed, signedMoney, timeHM } from '../format';
 import { sessionLabel } from '../types';
 import { Empty, ErrorBlock, Kpis, PageHeader, Panel, PnL, RankList, Signed } from '../ui/kit';
 
@@ -14,7 +14,8 @@ const HEAD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Calendar() {
   const nav = useNavigate();
-  const { scopeTrades, scopeAccounts, strategies, loading, error, refresh } = useJournal();
+  const { scopeTrades, scopeAccounts, strategies, loading, error, refresh, view } = useJournal();
+  const hidden = view === 'hidden';
   const now = new Date();
   const [cursor, setCursor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [picked, setPicked] = useState<string | null>(dayKey(now));
@@ -63,11 +64,11 @@ export default function Calendar() {
       {error && <ErrorBlock message={`Couldn't load your journal: ${error}`} onRetry={refresh} />}
 
       <Kpis items={[
-        { label: `Net result, ${cursor.toLocaleString('en-US', { month: 'long' })}`, lead: true, tone: s.net < 0 ? 'neg' : 'flat', value: monthDays.length ? money(s.net, currency, { sign: true }) : money(0, currency), note: `${int(s.count)} closed trades` },
+        { label: `Net result, ${cursor.toLocaleString('en-US', { month: 'long' })}`, lead: true, tone: s.net < 0 ? 'neg' : 'flat', result: s.net, value: monthDays.length ? money(s.net, currency, { sign: true }) : money(0, currency), note: `${int(s.count)} closed trades` },
         { label: 'Green days', value: monthDays.length ? `${greenDays} of ${monthDays.length}` : '—', note: monthDays.length ? pct((greenDays / monthDays.length) * 100, 0) : undefined },
         { label: 'Win rate', value: pct(s.winRate), note: `${s.wins} won · ${s.losses} lost` },
-        { label: 'Best day', value: best ? money(best.pnl, currency, { sign: true, decimals: 0 }) : '—', note: best ? best.date : undefined },
-        { label: 'Worst day', value: worst && worst.pnl < 0 ? money(worst.pnl, currency, { decimals: 0 }) : '—', note: worst && worst.pnl < 0 ? worst.date : undefined },
+        { label: 'Best day', result: best?.pnl, value: best ? money(best.pnl, currency, { sign: true, decimals: 0 }) : '—', note: best ? best.date : undefined },
+        { label: 'Worst day', result: worst && worst.pnl < 0 ? worst.pnl : null, value: worst && worst.pnl < 0 ? money(worst.pnl, currency, { decimals: 0 }) : '—', note: worst && worst.pnl < 0 ? worst.date : undefined },
         { label: 'Avg R', value: s.avgR == null ? '—' : signed(s.avgR, 2, 'R'), note: 'per closed trade' },
       ]} />
 
@@ -90,8 +91,9 @@ export default function Calendar() {
                         <span className="d">{c.date.getDate()}</span>
                         {d && c.inMonth ? (
                           <span>
-                            <span className="v full" style={{ display: 'block' }}>{signed(d.pnl, 0)}</span>
-                            <span className="v short">{compact(d.pnl)}</span>
+                            {/* Hidden: the day's tint already says green or red, so the cell carries no figure. */}
+                            {!hidden && <><span className="v full" style={{ display: 'block' }}>{signedMoney(d.pnl, 0)}</span>
+                            <span className="v short">{compact(d.pnl)}</span></>}
                             <span className="c">{d.count} trade{d.count === 1 ? '' : 's'}</span>
                           </span>
                         ) : <span />}
@@ -99,13 +101,13 @@ export default function Calendar() {
                     );
                     return d && c.inMonth ? (
                       <button key={c.key} role="gridcell" className={cls} style={{ ['--k' as string]: 0.35 + k * 0.65 }} aria-pressed={picked === c.key}
-                        aria-label={`${c.key}: ${signed(d.pnl, 0)} over ${d.count} trades`} onClick={() => setPicked(picked === c.key ? null : c.key)}>{inner}</button>
+                        aria-label={`${c.key}: ${hidden ? (d.pnl > 0 ? 'green' : d.pnl < 0 ? 'red' : 'flat') : signedMoney(d.pnl, 0)} over ${d.count} trades`} onClick={() => setPicked(picked === c.key ? null : c.key)}>{inner}</button>
                     ) : (
                       <div key={c.key} role="gridcell" className={cls}>{inner}</div>
                     );
                   })}
                   <div className="j-week" role="gridcell">
-                    {w.count ? (<><b className={w.pnl < 0 ? 'j-neg' : ''}>{signed(w.pnl, 0)}</b><span>{w.count} trade{w.count === 1 ? '' : 's'}</span></>) : <span>—</span>}
+                    {w.count ? (<><b className={w.pnl < 0 ? 'j-neg' : ''} style={hidden ? { color: w.pnl < 0 ? 'var(--negative)' : w.pnl > 0 ? 'var(--pos-ink)' : undefined } : undefined}>{signedMoney(w.pnl, 0)}</b><span>{w.count} trade{w.count === 1 ? '' : 's'}</span></>) : <span>—</span>}
                   </div>
                 </div>
               ))}

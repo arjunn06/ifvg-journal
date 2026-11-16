@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as A from '../../analytics';
-import { dec2, money, shortDate } from '../../format';
+import { dec2, money, shortDate, unlessHidden } from '../../format';
 import type { Trade } from '../../types';
 import { DailyBars, LineChart } from '../../ui/charts';
 import { RHistogram } from './RHistogram';
@@ -57,7 +57,7 @@ export function Distribution({ trades, s, currency, startBalance, periodLabel }:
 
       <div className="j-grid">
         <Panel className="j-span-12" title="Drawdown"
-          meta={s.count ? `Max drawdown ${money(-s.maxDrawdown, currency)}${ddPct != null ? ` · ${dec2(ddPct)}% of starting balance` : ''} · ${periodLabel}` : periodLabel}>
+          meta={s.count ? `Max drawdown ${money(-s.maxDrawdown, currency)}${ddPct != null ? ` · ${unlessHidden(`${dec2(ddPct)}%`)} of starting balance` : ''} · ${periodLabel}` : periodLabel}>
           <LineChart ariaLabel="Drawdown from the running peak" currency={currency} height={240} zeroBase
             points={curve.map((p) => ({ t: p.t, v: -p.dd }))} format={(v) => money(v, currency)} />
         </Panel>

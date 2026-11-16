@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { buildDemo } from './demo';
 import { inPeriod, type Period } from './analytics';
+import { setPercentBase, useStoredViewMode, type ViewMode } from './view';
 import type { Account, JournalData, Trade, TradeMistake } from './types';
 
 const DEMO_KEY = 'ifvg-demo';
@@ -62,6 +63,8 @@ interface JournalContext extends JournalData {
   /** Trades in the chosen account(s) and period. */
   viewTrades: Trade[];
   startBalance: number;
+  /** How amounts are shown (header switch). Reading it, or any context value, re-renders a screen when it changes. */
+  view: ViewMode;
 
   saveTrade: (trade: Partial<Trade>, extras?: SaveTradeExtras) => Promise<string>;
   importTrades: (accountId: string, trades: Partial<Trade>[]) => Promise<void>;
@@ -148,6 +151,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
   }, [data.trades, scopeAccounts]);
   const viewTrades = useMemo(() => inPeriod(scopeTrades, period), [scopeTrades, period]);
   const startBalance = useMemo(() => scopeAccounts.reduce((s, a) => s + a.initial_balance, 0), [scopeAccounts]);
+  // Percent view divides by this. Set before any screen below renders, and again whenever the scope changes.
+  const view = useStoredViewMode();
+  setPercentBase(startBalance);
 
   // If the saved scope points at an account that no longer exists, fall back to all.
   useEffect(() => {
@@ -240,7 +246,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
   const value: JournalContext = {
     ...data, loading, error, isDemo, userId, refresh,
-    scope, setScope, period, setPeriod, scopeAccounts, scopeTrades, viewTrades, startBalance,
+    scope, setScope, period, setPeriod, scopeAccounts, scopeTrades, viewTrades, startBalance, view,
     saveTrade, importTrades, deleteTrade,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

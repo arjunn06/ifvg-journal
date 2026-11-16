@@ -48,6 +48,7 @@ function Detail({ trade, older, newer }: { trade: Trade; older: Trade | null; ne
   const [del, setDel] = useState(false);
   const open = trade.status === 'open';
   const cur = f.currency;
+  const base = f.base;
   const sub = `${whenLabel(trade.entry_date)} · ${f.account?.name ?? 'Unknown account'}${f.strategy ? ` · ${f.strategy.name}` : ''}`;
   const score = f.checklist.score;
 
@@ -67,11 +68,11 @@ function Detail({ trade, older, newer }: { trade: Trade; older: Trade | null; ne
       />
       <Kpis items={[
         {
-          label: 'Result', lead: true, tone: !open && (trade.pnl ?? 0) < 0 ? 'neg' : 'flat',
-          value: open ? 'Open' : money(trade.pnl, cur, { sign: true }),
-          note: <><Pill kind={resultKind(f.result)}>{resultLabel(f.result)}</Pill>{!open && trade.commission != null ? <span> · fees {money(-Math.abs(trade.commission), cur)}</span> : null}</>,
+          label: 'Result', lead: true, tone: !open && (trade.pnl ?? 0) < 0 ? 'neg' : 'flat', result: open ? null : trade.pnl,
+          value: open ? 'Open' : money(trade.pnl, cur, { sign: true, base }),
+          note: <><Pill kind={resultKind(f.result)}>{resultLabel(f.result)}</Pill>{!open && trade.commission != null ? <span> · fees {money(-Math.abs(trade.commission), cur, { base })}</span> : null}</>,
         },
-        { label: 'R multiple', value: f.r != null ? rMult(f.r) : '—', tone: f.r != null && f.r < 0 ? 'neg' : 'flat', note: trade.risk_amount != null ? `on ${money(trade.risk_amount, cur)} risked` : 'no risk recorded' },
+        { label: 'R multiple', value: f.r != null ? rMult(f.r) : '—', tone: f.r != null && f.r < 0 ? 'neg' : 'flat', note: trade.risk_amount != null ? `on ${money(trade.risk_amount, cur, { base })} risked` : 'no risk recorded' },
         { label: 'Duration', value: open ? 'Running' : duration(trade.entry_date, trade.exit_date), note: sessionLabel(trade.session) },
         { label: 'Size', value: qty(trade.quantity), unit: trade.quantity === 1 ? 'contract' : trade.quantity ? 'contracts' : undefined, note: `${trade.symbol} ${sideWord(trade)}` },
         { label: 'Confluence', value: score != null ? `${score}%` : '—', note: f.checklist.total ? `${f.checklist.present} of ${f.checklist.total} items` : 'no checklist logged' },

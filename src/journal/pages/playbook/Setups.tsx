@@ -6,7 +6,7 @@ import { Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2 } from 'lucide
 import { supabase } from '@/integrations/supabase/client';
 import { useJournal } from '../../JournalProvider';
 import { bySession, equityCurve, summarize } from '../../analytics';
-import { dec2, int, money, pct, rMult, signed } from '../../format';
+import { dec2, int, money, pct, rMult, signedMoney } from '../../format';
 import { ConfirmDialog, Dialog, Empty, ErrorBlock, Kpis, Panel, PnL } from '../../ui/kit';
 import { LineChart } from '../../ui/charts';
 import { DemoNotice, Field, SwitchRow, errText, lines, numOrNull, plural, useMedia, useWriteGuard, type SetupRow } from './shared';
@@ -242,14 +242,14 @@ export default function Setups({ selectedId, onSelect, newSignal }: { selectedId
         { label: 'Win rate', value: pct(sum.winRate), note: sum.count ? `${sum.flat} flat` : undefined },
         { label: 'Profit factor', value: sum.profitFactor == null ? '—' : dec2(sum.profitFactor), note: sum.avgWin != null && sum.avgLoss != null ? `avg ${money(sum.avgWin, currency, { decimals: 0 })} / ${money(-sum.avgLoss, currency, { decimals: 0 })}` : 'needs a win and a loss' },
         { label: 'Average R', value: rMult(sum.avgR), note: sum.rCount ? `${sum.rCount} of ${sum.count} trades have R` : undefined },
-        { label: 'Net result', value: money(sum.net, currency, { sign: true, decimals: 0 }), tone: sum.net < 0 ? 'neg' : 'flat', note: sum.expectancy != null ? `${money(sum.expectancy, currency, { sign: true, decimals: 0 })} a trade` : undefined },
+        { label: 'Net result', value: money(sum.net, currency, { sign: true, decimals: 0 }), tone: sum.net < 0 ? 'neg' : 'flat', result: sum.net, note: sum.expectancy != null ? `${money(sum.expectancy, currency, { sign: true, decimals: 0 })} a trade` : undefined },
       ]} />
 
       <Panel title="Result of this setup" meta={`Running net · all time · ${scopeAccounts.length === 1 ? scopeAccounts[0].name : `${scopeAccounts.length} accounts`}`}>
         {detail && detail.curve.length ? (
           <>
             <LineChart ariaLabel={`Cumulative result of ${s.name}`} currency={currency} height={220}
-              points={detail.curve.map((p) => ({ t: p.t, v: p.v, note: `${signed(p.pnl, 2)} on the trade` }))} />
+              points={detail.curve.map((p) => ({ t: p.t, v: p.v, note: `${signedMoney(p.pnl, 2)} on the trade` }))} />
             <p className="j-meta pb-foot">
               {detail.best
                 ? <>Best session: <b>{detail.best.label}</b>, {money(detail.best.net, currency, { sign: true, decimals: 0 })} over {plural(detail.best.count, 'trade')}{detail.best.winRate != null ? `, ${Math.round(detail.best.winRate)}% won` : ''}.</>

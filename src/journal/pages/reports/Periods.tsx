@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import * as A from '../../analytics';
-import { dec2, money, pct, rMult, shortDate, signed } from '../../format';
+import { dec2, money, pct, rMult, shortDate, signed, signedMoney } from '../../format';
 import type { Strategy, TradeMistake } from '../../types';
 import { LineChart } from '../../ui/charts';
 import { Empty, Panel, PnL, Signed, Tabs } from '../../ui/kit';
@@ -33,7 +33,7 @@ function Detail({ row, currency, strategies, mistakes }: { row: PeriodRow; curre
     <div className="rp-detail-in">
       <div>
         <div className="j-meta rp-cap">Running result within the period, {closed.length} trade{closed.length === 1 ? '' : 's'}</div>
-        <LineChart ariaLabel={`Result through ${row.label}`} currency={currency} height={168} zeroBase points={curve.map((p) => ({ t: p.t, v: p.v, note: `${signed(p.pnl, 2)} on the trade` }))} />
+        <LineChart ariaLabel={`Result through ${row.label}`} currency={currency} height={168} zeroBase points={curve.map((p) => ({ t: p.t, v: p.v, note: `${signedMoney(p.pnl, 2)} on the trade` }))} />
       </div>
       <dl className="j-kv rp-kv">
         <dt>Best trade</dt><dd>{line(best)}</dd>

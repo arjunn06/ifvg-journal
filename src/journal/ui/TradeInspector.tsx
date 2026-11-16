@@ -28,7 +28,7 @@ export function useTradeFacts(trade: Trade) {
   const strategy = J.strategies.find((s) => s.id === trade.strategy_id);
   const checklist = useMemo(() => checklistFor(trade, J.confluenceItems, J.tradeConfluence), [trade, J.confluenceItems, J.tradeConfluence]);
   const mistakes = useMemo(() => mistakesFor(trade, J.mistakes), [trade, J.mistakes]);
-  return { account, currency: account?.currency ?? 'USD', strategy, checklist, mistakes, result: resultOf(trade), r: rOf(trade) };
+  return { account, currency: account?.currency ?? 'USD', base: account?.initial_balance, strategy, checklist, mistakes, result: resultOf(trade), r: rOf(trade) };
 }
 
 type Facts = ReturnType<typeof useTradeFacts>;
@@ -56,10 +56,10 @@ function Execution({ trade, f }: { trade: Trade; f: Facts }) {
       <dt>Stop</dt><dd className="j-num">{price(trade.stop_loss)}</dd>
       <dt>Target</dt><dd className="j-num">{price(trade.take_profit)}</dd>
       <dt>Size</dt><dd className="j-num">{qty(trade.quantity)}</dd>
-      <dt>Risk</dt><dd className="j-num">{trade.risk_amount != null ? money(trade.risk_amount, f.currency) : '—'}</dd>
+      <dt>Risk</dt><dd className="j-num">{trade.risk_amount != null ? money(trade.risk_amount, f.currency, { base: f.base }) : '—'}</dd>
       <dt>Planned R:R</dt><dd className="j-num">{planned != null ? `1 : ${planned.toFixed(2)}` : '—'}</dd>
-      <dt>Commission</dt><dd className="j-num">{trade.commission != null ? money(-Math.abs(trade.commission), f.currency) : '—'}</dd>
-      <dt>Swap</dt><dd className="j-num">{trade.swap != null ? money(trade.swap, f.currency) : '—'}</dd>
+      <dt>Commission</dt><dd className="j-num">{trade.commission != null ? money(-Math.abs(trade.commission), f.currency, { base: f.base }) : '—'}</dd>
+      <dt>Swap</dt><dd className="j-num">{trade.swap != null ? money(trade.swap, f.currency, { base: f.base }) : '—'}</dd>
       <dt>Duration</dt><dd className="j-num">{open ? 'Running' : duration(trade.entry_date, trade.exit_date)}</dd>
       <dt>Opened</dt><dd className="j-num">{stamp(trade.entry_date)}</dd>
       <dt>Closed</dt><dd className="j-num">{stamp(trade.exit_date)}</dd>
@@ -197,7 +197,7 @@ export default function TradeInspector({ trade, variant }: { trade: Trade; varia
       </header>
       <p className="jti-when j-meta">{whenLabel(trade.entry_date)} · {f.account?.name ?? 'Unknown account'}</p>
       <div className="jti-result">
-        <span className="pnl"><PnL v={trade.status === 'open' ? null : trade.pnl} currency={f.currency} /></span>
+        <span className="pnl"><PnL v={trade.status === 'open' ? null : trade.pnl} currency={f.currency} base={f.base} /></span>
         <span className="r">{f.r != null ? <Signed v={f.r} digits={2} suffix="R" /> : <span className="j-dim">{trade.status === 'open' ? 'In the market' : 'No R'}</span>}</span>
       </div>
       <div className="jti-actions">

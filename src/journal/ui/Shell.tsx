@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, CalendarDays, ChartNoAxesColumn, ChevronDown, Crosshair, LayoutGrid, LogOut, Plus, Search, Wallet, MoreHorizontal, Sparkles, X } from 'lucide-react';
+import { BookOpen, CalendarDays, ChartNoAxesColumn, ChevronDown, Crosshair, EyeOff, LayoutGrid, LogOut, Plus, Search, Wallet, MoreHorizontal, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useJournal, exitDemo } from '../JournalProvider';
 import { accountEquity } from '../analytics';
-import { money, isoDate, initials } from '../format';
+import { money, isoDate, initials, currencySign } from '../format';
+import { VIEW_MODES, setViewMode, useStoredViewMode, type ViewMode } from '../view';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Avatar, Mark, hueFor, usePopover } from './kit';
 import { THEMES } from './ThemeToggle';
@@ -47,12 +48,34 @@ function ScopeSwitcher() {
               <Avatar name={a.name} hue={hueFor(i)} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                <span className="j-meta">{a.is_prop_firm ? 'Prop' : a.account_type === 'paper' ? 'Paper' : 'Live'} · {money(accountEquity(a, trades, transactions), a.currency, { decimals: 0 })}</span>
+                <span className="j-meta">{a.is_prop_firm ? 'Prop' : a.account_type === 'paper' ? 'Paper' : 'Live'} · {money(accountEquity(a, trades, transactions), a.currency, { decimals: 0, base: a.initial_balance })}</span>
               </span>
             </button>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const VIEW_COPY: Record<ViewMode, { label: string; action: string }> = {
+  money: { label: 'Show amounts in money', action: 'Show amounts in money' },
+  percent: { label: 'Show amounts as a percentage of the starting balance', action: 'Show amounts as % of starting balance' },
+  hidden: { label: 'Hide amounts: results show as green or red only', action: 'Hide amounts (green and red only)' },
+};
+
+/** $ / % / hidden: how every amount in the app is printed. Hidden keeps each result's green or red and drops the figure. */
+function ViewSwitcher() {
+  const view = useStoredViewMode();
+  const { scopeAccounts } = useJournal();
+  const sign = currencySign(scopeAccounts[0]?.currency).trim();
+  return (
+    <div className="j-view" role="group" aria-label="Show amounts as">
+      {VIEW_MODES.map((m) => (
+        <button key={m} aria-pressed={view === m} aria-label={VIEW_COPY[m].label} title={VIEW_COPY[m].label} onClick={() => setViewMode(m)}>
+          {m === 'money' ? sign : m === 'percent' ? '%' : <EyeOff />}
+        </button>
+      ))}
     </div>
   );
 }
@@ -95,6 +118,7 @@ type PaletteItem = { key: string; label: string; hint: string; to?: string; run?
 function Palette({ onClose }: { onClose: () => void }) {
   const { trades, accounts } = useJournal();
   const { resolvedTheme, setTheme } = useTheme();
+  const view = useStoredViewMode();
   const { open: openLog } = useQuickLog();
   const nav = useNavigate();
   const [q, setQ] = useState('');
@@ -105,13 +129,14 @@ function Palette({ onClose }: { onClose: () => void }) {
     pages.push({ key: '/trades/new', label: 'Log a trade', hint: 'Action', to: '/trades/new' });
     const light = resolvedTheme === 'light';
     pages.push({ key: 'theme', label: light ? 'Switch to dark theme' : 'Switch to light theme', hint: 'Action', run: () => setTheme(light ? 'dark' : 'light') });
+    for (const m of VIEW_MODES) if (m !== view) pages.push({ key: `view-${m}`, label: VIEW_COPY[m].action, hint: 'Action', run: () => setViewMode(m) });
     if (!s) return pages;
     const tr = trades
       .filter((t) => t.symbol.toLowerCase().includes(s) || (t.notes ?? '').toLowerCase().includes(s) || isoDate(t.entry_date).includes(s))
       .slice(0, 8)
       .map((t) => ({ key: t.id, label: `${t.symbol} ${t.trade_type} · ${isoDate(t.entry_date)}`, hint: accounts.find((a) => a.id === t.trading_account_id)?.name ?? 'Trade', to: `/trades/${t.id}` }));
     return [...pages.filter((p) => p.label.toLowerCase().includes(s)), ...tr];
-  }, [q, trades, accounts, resolvedTheme, setTheme]);
+  }, [q, trades, accounts, resolvedTheme, setTheme, view]);
   useEffect(() => setI(0), [q]);
   const go = (it: PaletteItem) => { onClose(); if (it.run) it.run(); else if (it.to === '/trades/new') openLog(); else if (it.to) nav(it.to); };
   return (
@@ -173,10 +198,11 @@ function ShellInner() {
         <header className="j-topbar">
           <ScopeSwitcher />
           <span className="j-spacer" />
+          <ViewSwitcher />
           <button className="j-search" onClick={() => setPalette(true)} aria-label="Search">
             <Search /> <span>Search trades and pages</span> <kbd>⌘K</kbd>
           </button>
-          <button className="j-btn primary" onClick={openLog}><Plus /> <span className="lbl">Log trade</span></button>
+          <button className="j-btn primary" onClick={openLog} aria-label="Log trade"><Plus /> <span className="lbl">Log trade</span></button>
           <UserMenu />
         </header>
         <main className="j-canvas">

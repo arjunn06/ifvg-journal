@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Pencil, Plus, Power, Scale, Trash2 } from 'lucide-react';
 import { useJournal } from '../../JournalProvider';
 import { equityCurve, isClosed, rOf, summarize, transactionNet } from '../../analytics';
-import { dec2, int, isoDate, money, pct, timeHM } from '../../format';
+import { dec2, int, isoDate, money as fmtMoney, pct, timeHM, unlessHidden } from '../../format';
 import { sessionLabel } from '../../types';
 import type { Account } from '../../types';
 import { ConfirmDialog, Empty, Kpis, PageHeader, Panel, PnL, Signed } from '../../ui/kit';
@@ -28,6 +28,9 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
 
   const index = J.accounts.findIndex((x) => x.id === a.id);
   const cur = a.currency;
+  // Percent view: every amount on this page is a share of this account's own starting balance, whatever the scope.
+  const base = a.initial_balance;
+  const money = (v: number | null | undefined, currency?: string, o: Parameters<typeof fmtMoney>[2] = {}) => fmtMoney(v, currency, { base, ...o });
   const mine = useMemo(() => J.trades.filter((t) => t.trading_account_id === a.id), [J.trades, a.id]);
   const txs = useMemo(() => txOf(J.transactions, a.id).sort((x, y) => +new Date(y.transaction_date) - +new Date(x.transaction_date)), [J.transactions, a.id]);
   const row = useMemo(() => accountRow(a, index, J.trades, J.transactions), [a, index, J.trades, J.transactions]);
@@ -42,8 +45,9 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
     if (!c.length) return [];
     const start = new Date(a.start_date ?? a.created_at).getTime();
     const t0 = start < c[0].t ? start : c[0].t - 86400000;
-    return [{ t: t0, v: a.initial_balance, label: 'Start', note: 'Initial balance' }, ...c.map((p) => ({ t: p.t, v: p.v, note: `${p.pnl >= 0 ? '+' : '−'}${money(Math.abs(p.pnl), cur)} on the trade` }))];
-  }, [mine, a, cur]);
+    return [{ t: t0, v: a.initial_balance, label: 'Start', note: 'Initial balance' }, ...c.map((p) => ({ t: p.t, v: p.v, note: `${p.pnl >= 0 ? '+' : '−'}${fmtMoney(Math.abs(p.pnl), cur, { base })} on the trade` }))];
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the text is built by formatters that follow the header's view, so a change of view must rebuild it
+  }, [mine, a, cur, base, J.view]);
 
   const recent = useMemo(() => [...mine].sort((x, y) => +new Date(y.entry_date) - +new Date(x.entry_date)).slice(0, 6), [mine]);
   const started = isoDate(a.start_date ?? a.created_at);
@@ -93,15 +97,15 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
 
       <Kpis items={[
         { label: 'Equity', lead: true, value: money(row.equity, cur), note: <>from {money(a.initial_balance, cur, { decimals: 0 })} at start</> },
-        { label: 'Result since start', tone: row.result < 0 ? 'neg' : 'flat', value: money(row.result, cur, { sign: true, decimals: 0 }), note: `${int(s.count)} closed ${s.count === 1 ? 'trade' : 'trades'}` },
+        { label: 'Result since start', tone: row.result < 0 ? 'neg' : 'flat', result: row.result, value: money(row.result, cur, { sign: true, decimals: 0 }), note: `${int(s.count)} closed ${s.count === 1 ? 'trade' : 'trades'}` },
         { label: 'Win rate', value: pct(s.winRate), note: `${s.wins} won · ${s.losses} lost` },
         { label: 'Profit factor', value: s.profitFactor == null ? '—' : dec2(s.profitFactor), note: s.avgWin != null && s.avgLoss != null ? `avg ${money(s.avgWin, cur, { decimals: 0 })} / ${money(-s.avgLoss, cur, { decimals: 0 })}` : 'needs a win and a loss' },
-        { label: 'Max drawdown', value: dollars(-s.maxDrawdown), note: `${pct((s.maxDrawdown / a.initial_balance) * 100, 1)} of starting balance` },
+        { label: 'Max drawdown', value: dollars(-s.maxDrawdown), note: `${unlessHidden(pct((s.maxDrawdown / a.initial_balance) * 100, 1))} of starting balance` },
       ]} />
 
       <div className="j-grid">
         <Panel className="j-span-8" title="Equity" meta={`Balance after each closed trade, from ${money(a.initial_balance, cur, { decimals: 0 })}`}>
-          <LineChart ariaLabel={`Equity of ${a.name} over time`} currency={cur} height={288} points={curve}
+          <LineChart ariaLabel={`Equity of ${a.name} over time`} currency={cur} base={base} height={288} points={curve}
             refs={prop ? [
               ...(prop.target ? [{ value: a.initial_balance + prop.target, label: `Target ${dollars(a.initial_balance + prop.target)}`, tone: 'pos' as const }] : []),
               ...(prop.floor != null ? [{ value: prop.floor, label: `Floor ${dollars(prop.floor)}`, tone: 'neg' as const }] : []),
@@ -190,7 +194,7 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
                         <td className="mut j-trunc">{stratName(t.strategy_id)}</td>
                         <td className="mut">{sessionLabel(t.session)}</td>
                         <td className="n j-num">{t.status === 'open' ? <span className="j-pill warn">Open</span> : <Signed v={rOf(t)} digits={2} suffix="R" />}</td>
-                        <td className="n"><PnL v={t.pnl} currency={cur} /></td>
+                        <td className="n"><PnL base={base} v={t.pnl} currency={cur} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -202,7 +206,7 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
                     <span className={`j-side ${t.trade_type}`} style={{ marginRight: 0 }}>{t.trade_type === 'long' ? 'L' : 'S'}</span>
                     <span className="grow"><span className="t">{t.symbol}</span><span className="s"><span className="j-mono">{isoDate(t.entry_date)}</span> · {stratName(t.strategy_id)}</span></span>
                     <span className="ac-right">
-                      {t.status === 'open' ? <span className="j-pill warn">Open</span> : <PnL v={t.pnl} currency={cur} />}
+                      {t.status === 'open' ? <span className="j-pill warn">Open</span> : <PnL base={base} v={t.pnl} currency={cur} />}
                       {isClosed(t) && <span className="s j-num"><Signed v={rOf(t)} digits={2} suffix="R" /></span>}
                     </span>
                   </button>
@@ -216,17 +220,17 @@ export function AccountDetail({ account: a, onEdit, onDemo }: { account: Account
           action={<button className="j-link" onClick={() => nav(`/accounts?tab=funding&account=${a.id}`)}>All funding <ArrowRight /></button>}>
           <dl className="j-kv" style={{ marginBottom: 12 }}>
             <dt>Starting balance</dt><dd className="j-num">{money(a.initial_balance, cur)}</dd>
-            <dt>Trading result</dt><dd><PnL v={row.result} currency={cur} /></dd>
-            <dt>Cash in and out</dt><dd><PnL v={equityEffect} currency={cur} /></dd>
+            <dt>Trading result</dt><dd><PnL base={base} v={row.result} currency={cur} /></dd>
+            <dt>Cash in and out</dt><dd><PnL base={base} v={equityEffect} currency={cur} /></dd>
             <dt>Equity</dt><dd className="j-num" style={{ color: 'var(--text)' }}>{money(row.equity, cur)}</dd>
             <dt>Fees paid, not in equity</dt><dd className="j-num">{money(cash.fees, cur)}</dd>
-            <dt>Result after fees</dt><dd><PnL v={row.result - cash.fees} currency={cur} /></dd>
+            <dt>Result after fees</dt><dd><PnL base={base} v={row.result - cash.fees} currency={cur} /></dd>
             <dt>Fees against result</dt><dd className="j-num">{row.result > 0 ? pct((cash.fees / row.result) * 100, 1) : <span className="j-dim">—</span>}</dd>
           </dl>
           {txs.slice(0, 3).map((x) => (
             <div key={x.id} className="j-row" style={{ borderTop: '1px solid var(--rule)' }}>
               <span className="grow"><span className="t">{x.description || txLabel(x.transaction_type)}</span><span className="s" style={{ display: 'block' }}><span className="j-mono">{isoDate(x.transaction_date)}</span> · <TypePill type={x.transaction_type} /></span></span>
-              <Amount tx={x} currency={cur} />
+              <Amount tx={x} currency={cur} base={base} />
             </div>
           ))}
           {!txs.length && <div className="j-meta" style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>No deposits, withdrawals, payouts or fees recorded for this account.</div>}

@@ -29,7 +29,7 @@ export function BalanceAdjustmentDialog({ open, onClose, accountId, accountName,
     try {
       await writeBalanceAdjustment(J, accountId, amount, currentBalance);
       await J.refresh();
-      toast({ title: 'Account balance adjusted', description: `${accountName} is now ${money(amount, currency)}.` });
+      toast({ title: 'Account balance adjusted', description: `${accountName} is now ${money(amount, currency, { mode: 'money' })}.` });
       onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not adjust the balance.';
@@ -48,7 +48,7 @@ export function BalanceAdjustmentDialog({ open, onClose, accountId, accountName,
         <label htmlFor={`${inputId}-balance`}>Current balance ({currency})</label>
         <input id={`${inputId}-balance`} className="j-input" type="number" inputMode="decimal" min="0" step="0.01" autoFocus value={target} onChange={(event) => setTarget(event.target.value)} />
       </div>
-      <div className="j-meta">Current: {money(currentBalance, currency)} · Adjustment: {money(delta, currency, { sign: true })}</div>
+      <div className="j-meta">Current: {money(currentBalance, currency, { mode: 'money' })} · Adjustment: {money(delta, currency, { sign: true, mode: 'money' })}</div>
       {failure && <div className="j-error" role="alert" style={{ margin: 0 }}>{failure}</div>}
     </form>
   </Dialog>;

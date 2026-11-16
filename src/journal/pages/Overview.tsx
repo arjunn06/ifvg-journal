@@ -10,7 +10,7 @@ import {
   PERIODS, accountEquity, bySession, byConfluence, closeTime, dailyMap, equityCurve, inWindow, isClosed, mistakeCosts, pnlOf,
   periodStart, planAdherence, priorWindow, propStatus, rOf, summarize, topFinding,
 } from '../analytics';
-import { dec2, int, isoDate, money, pct, relativeDay, rMult, signed, timeHM } from '../format';
+import { dec2, int, isoDate, money, pct, relativeDay, rMult, signedMoney, timeHM, tone as toneOf, unlessHidden } from '../format';
 import { SESSIONS, sessionLabel } from '../types';
 import { Avatar, Empty, ErrorBlock, Kpis, PageHeader, Panel, PnL, Range, RankList, Signed, Skel, Tabs, hueFor } from '../ui/kit';
 import { DailyBars, LineChart } from '../ui/charts';
@@ -46,7 +46,8 @@ export default function Overview() {
     return w ? summarize(inWindow(scopeTrades, w)) : null;
   }, [scopeTrades, period]);
   const adherence = useMemo(() => planAdherence(viewTrades, mistakes), [viewTrades, mistakes]);
-  const finding = useMemo(() => topFinding(viewTrades, strategies, mistakes, currency), [viewTrades, strategies, mistakes, currency]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the text is built by formatters that follow the header's view, so a change of view must rebuild it
+  const finding = useMemo(() => topFinding(viewTrades, strategies, mistakes, currency), [viewTrades, strategies, mistakes, currency, J.view]);
   const sessions = useMemo(() => {
     const rows = bySession(viewTrades);
     return SESSIONS.map((x) => rows.find((r) => r.key === x.key) ?? { key: x.key, label: x.label, count: 0, wins: 0, losses: 0, net: 0, winRate: null, expectancy: null, avgR: null, profitFactor: null })
@@ -73,7 +74,8 @@ export default function Overview() {
     if (w.pnl >= 0 || Math.abs(w.pnl) < avgAbs * 2.2) return null;
     const last = w.trades.map(closeTime).sort((a, b) => b - a)[0];
     return { t: last, label: `Worst day ${money(w.pnl, currency, { decimals: 0 })}` };
-  }, [daily, currency]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the text is built by formatters that follow the header's view, so a change of view must rebuild it
+  }, [daily, currency, J.view]);
 
   if (loading) return <Loading />;
   const periodLabel = PERIODS.find((p) => p.key === period)!.label;
@@ -160,12 +162,12 @@ export default function Overview() {
 
       <Kpis items={[
         { label: balanceLabel, lead: true, value: currentBalance, note: `${scopeAccounts.length} ${scopeAccounts.length === 1 ? 'account' : 'accounts'} · grouped by currency` },
-        { label: 'Net result', tone: s.net < 0 ? 'neg' : 'flat', value: money(s.net, currency, { sign: true }),
+        { label: 'Net result', tone: toneOf(s.net), result: s.net, value: money(s.net, currency, { sign: true }),
           note: netDelta != null ? <><b>{money(netDelta, currency, { sign: true })}</b> vs prior {periodLabel}</> : `${int(s.count)} closed trades` },
         { label: 'Win rate', value: pct(s.winRate), note: `${s.wins} won · ${s.losses} lost · ${s.flat} flat` },
         { label: 'Profit factor', value: s.profitFactor == null ? '—' : dec2(s.profitFactor), note: s.avgWin != null && s.avgLoss != null ? `avg ${money(s.avgWin, currency, { decimals: 0 })} / ${money(-s.avgLoss, currency, { decimals: 0 })}` : 'needs a win and a loss' },
         { label: 'Expectancy', value: rMult(s.avgR), unit: 'per trade', note: s.expectancy != null ? `${money(s.expectancy, currency, { sign: true, decimals: 0 })} a trade` : undefined },
-        { label: 'Max drawdown', value: s.maxDrawdown ? money(-s.maxDrawdown, currency, { decimals: 0 }) : money(0, currency, { decimals: 0 }), note: startBalance ? `${pct((s.maxDrawdown / startBalance) * 100, 1)} of starting balance` : undefined },
+        { label: 'Max drawdown', value: s.maxDrawdown ? money(-s.maxDrawdown, currency, { decimals: 0 }) : money(0, currency, { decimals: 0 }), note: startBalance ? `${unlessHidden(pct((s.maxDrawdown / startBalance) * 100, 1))} of starting balance` : undefined },
         { label: 'Plan followed', value: adherence ? pct(adherence.pct, 0) : '—', note: adherence ? `${adherence.clean} of ${adherence.total} trades clean` : undefined },
       ]} />
 
@@ -177,7 +179,7 @@ export default function Overview() {
         >
           {tab === 'equity' && (
             <LineChart ariaLabel="Account equity over the selected period" currency={currency} height={280}
-              points={curve.map((p) => ({ t: p.t, v: p.v, note: `${signed(p.pnl, 2)} on the trade` }))}
+              points={curve.map((p) => ({ t: p.t, v: p.v, note: `${signedMoney(p.pnl, 2)} on the trade` }))}
               annotation={worstDay}
               refs={prop && single ? [
                 ...(prop.target ? [{ value: single.initial_balance + prop.target, label: `Target ${money(single.initial_balance + prop.target, currency, { decimals: 0 })}`, tone: 'pos' as const }] : []),
@@ -243,8 +245,8 @@ export default function Overview() {
                     <Avatar name={a.name} hue={hueFor(ai)} />
                     <span className="grow"><span className="t">{a.name}</span><span className="s" style={{ display: 'block' }}>{a.is_prop_firm ? 'Prop evaluation' : a.account_type === 'paper' ? 'Paper' : 'Live'} · {a.broker}</span></span>
                     <span style={{ textAlign: 'right' }}>
-                      <span className="j-num" style={{ display: 'block' }}>{money(eq, a.currency, { decimals: 0 })}</span>
-                      <span className="s j-num"><Signed v={net} digits={0} /> since start</span>
+                      <span className="j-num" style={{ display: 'block' }}>{money(eq, a.currency, { decimals: 0, base: a.initial_balance })}</span>
+                      <span className="s j-num"><PnL v={net} currency={a.currency} decimals={0} base={a.initial_balance} /> since start</span>
                     </span>
                   </button>
                 );

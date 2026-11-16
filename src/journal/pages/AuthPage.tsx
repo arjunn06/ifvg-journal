@@ -8,7 +8,8 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { buildDemo } from '../demo';
 import { equityCurve, summarize } from '../analytics';
-import { money, pct, rMult } from '../format';
+import { moneyPlain as money, pct, rMult } from '../format';
+import { PlainFigures } from '../ui/PlainFigures';
 import { Kpis, Tabs } from '../ui/kit';
 import { LineChart } from '../ui/charts';
 import { Brand, Field, PasswordField } from '../auth/parts';
@@ -29,6 +30,7 @@ function ProductCrop() {
   }, []);
   const { acc, summary: s, curve } = sample;
   return (
+    <PlainFigures>
     <figure data-ui className="auth-frag" aria-label="Sample data: equity curve and key figures">
       <div className="auth-frag-head">
         <h2>{acc.name}</h2>
@@ -41,6 +43,7 @@ function ProductCrop() {
       ]} />
       <LineChart points={curve.map((p) => ({ t: p.t, v: p.v }))} height={232} currency={acc.currency} ariaLabel={`Equity curve of the sample account, ending at ${money(curve[curve.length - 1]?.v ?? 0, acc.currency, { decimals: 0 })}`} />
     </figure>
+    </PlainFigures>
   );
 }
 

@@ -282,7 +282,7 @@ function QuickLog({ onClose }: { onClose: () => void }) {
                         onClick={() => { setR(x); setAmount(''); }}>{x > 0 ? '+' : '−'}{Math.abs(x)}R</button>
                     ))}
                   </div>
-                  <p className="ql-help">1R is your usual risk on {acc?.name}: <b className="j-num">{money(risk, currency, { decimals: 0 })}</b></p>
+                  <p className="ql-help">1R is your usual risk on {acc?.name}: <b className="j-num">{money(risk, currency, { decimals: 0, base: acc?.initial_balance })}</b></p>
                 </>
               ) : (
                 <p className="ql-help">No history on {acc?.name} yet, so type the amount.</p>
@@ -293,7 +293,7 @@ function QuickLog({ onClose }: { onClose: () => void }) {
                   onChange={(e) => { setAmount(e.target.value.replace(/[^0-9.,]/g, '')); setR(null); }} aria-label={`Amount ${result === 'loss' ? 'lost' : 'won'} in ${currency}`} />
               </label>
               <div className={`ql-result ${pnl == null ? '' : pnl >= 0 ? 'pos' : 'neg'}`} aria-live="polite">
-                {pnl == null ? 'Pick a size above' : <><b className="j-num">{money(pnl, currency, { sign: true })}</b>{rShown != null && risk ? <span className="j-num">{rShown > 0 ? '+' : rShown < 0 ? '−' : ''}{Math.abs(rShown)}R</span> : null}</>}
+                {pnl == null ? 'Pick a size above' : <><b className="j-num">{money(pnl, currency, { sign: true, base: acc?.initial_balance })}</b>{rShown != null && risk ? <span className="j-num">{rShown > 0 ? '+' : rShown < 0 ? '−' : ''}{Math.abs(rShown)}R</span> : null}</>}
               </div>
             </>
           )}
@@ -348,7 +348,7 @@ function QuickLog({ onClose }: { onClose: () => void }) {
                 <span className="e">{resEmoji}</span>
                 <div>
                   <b>{symbol} {side}</b>
-                  <span className="j-num">{pnl != null ? money(pnl, currency, { sign: true }) : ''}{rShown != null && risk && result !== 'flat' ? ` · ${rShown > 0 ? '+' : rShown < 0 ? '−' : ''}${Math.abs(rShown)}R` : ''}</span>
+                  <span className="j-num">{pnl != null ? money(pnl, currency, { sign: true, base: acc?.initial_balance }) : ''}{rShown != null && risk && result !== 'flat' ? ` · ${rShown > 0 ? '+' : rShown < 0 ? '−' : ''}${Math.abs(rShown)}R` : ''}</span>
                 </div>
                 <div className="r">
                   <span>{m.emoji} {m.label}</span>

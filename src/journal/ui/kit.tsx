@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { money, signed, tone } from '../format';
+import { useViewMode } from '../view';
 import { PERIODS, type Period } from '../analytics';
 
 /** The IFVG mark: the logo artwork in the text colour (white on the dark ground, ink on the light one), with a little air around it. */
@@ -44,18 +45,24 @@ export function Panel({
   );
 }
 
-export interface KpiDef { label: string; value: ReactNode; unit?: string; note?: ReactNode; lead?: boolean; tone?: 'pos' | 'neg' | 'flat' }
+/** `result` is the signed amount a money figure shows: with figures hidden it is all that colours the mask green or red. */
+export interface KpiDef { label: string; value: ReactNode; unit?: string; note?: ReactNode; lead?: boolean; tone?: 'pos' | 'neg' | 'flat'; result?: number | null }
 export function Kpis({ items }: { items: KpiDef[] }) {
+  const mode = useViewMode();
   return (
     <div className={`j-kpis ${items[0]?.lead ? 'has-lead' : ''}`} role="group" aria-label="Key figures"
       style={items[0]?.lead ? ({ '--cols': `minmax(0, 1.5fr) repeat(${items.length - 1}, minmax(0, 1fr))` } as React.CSSProperties) : undefined}>
-      {items.map((k) => (
-        <div key={k.label} className={`j-kpi ${k.lead ? 'lead' : ''}`}>
-          <div className="j-kpi-label">{k.label}</div>
-          <div className={`j-kpi-value ${k.tone === 'neg' ? 'j-neg' : ''}`}>{k.value}{k.unit && <small>{k.unit}</small>}</div>
-          {k.note && <div className="j-kpi-note">{k.note}</div>}
-        </div>
-      ))}
+      {items.map((k) => {
+        // A gain stays in ink, except with figures hidden: then green is the only sign it was a gain.
+        const t = mode === 'hidden' && k.result != null ? tone(k.result) : k.tone;
+        return (
+          <div key={k.label} className={`j-kpi ${k.lead ? 'lead' : ''}`}>
+            <div className="j-kpi-label">{k.label}</div>
+            <div className={`j-kpi-value ${t === 'neg' ? 'j-neg' : t === 'pos' && mode === 'hidden' ? 'j-pos' : ''}`}>{k.value}{k.unit && <small>{k.unit}</small>}</div>
+            {k.note && <div className="j-kpi-note">{k.note}</div>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -82,11 +89,17 @@ export function Range({ value, onChange, options = PERIODS }: { value: Period; o
   );
 }
 
-/** A signed figure; negative results take the loss colour, positive stay in ink unless `colour` is set. */
-export function PnL({ v, currency = 'USD', decimals = 2, colour = true }: { v: number | null | undefined; currency?: string; decimals?: 0 | 2; colour?: boolean }) {
+/**
+ * A signed result in the header's chosen view ($, % of starting balance, or a mask). Results take the profit and
+ * loss colours; with figures hidden the colour is all that is left, so it is always on then. `base` is the
+ * starting balance to divide by in percent view when the amount belongs to one account rather than the scope.
+ */
+export function PnL({ v, currency = 'USD', decimals = 2, colour = true, base }: { v: number | null | undefined; currency?: string; decimals?: 0 | 2; colour?: boolean; base?: number }) {
+  const mode = useViewMode();
   if (v == null) return <span className="j-dim">—</span>;
   const t = tone(v);
-  return <span className={`j-num ${colour ? (t === 'neg' ? 'j-neg' : t === 'pos' ? 'j-pos' : '') : ''}`}>{money(v, currency, { sign: true, decimals })}</span>;
+  const tinted = colour || mode === 'hidden';
+  return <span className={`j-num ${tinted ? (t === 'neg' ? 'j-neg' : t === 'pos' ? 'j-pos' : '') : ''}`}>{money(v, currency, { sign: true, decimals, base, mode })}</span>;
 }
 
 export function Signed({ v, digits = 2, suffix = '' }: { v: number | null | undefined; digits?: number; suffix?: string }) {

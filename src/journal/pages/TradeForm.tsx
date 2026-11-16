@@ -7,7 +7,7 @@ import { ArrowDownRight, ArrowUpRight, ImagePlus, Trash2, X } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client';
 import { useJournal } from '../JournalProvider';
 import { CONFLUENCE_TIERS, accountEquity, byConfluence, bySymbol, isClosed } from '../analytics';
-import { currencySign, dec2, isoDate, money, relativeDay } from '../format';
+import { currencySign, dec2, isoDate, money, relativeDay, unlessHidden } from '../format';
 import { SESSIONS, type Side, type Trade } from '../types';
 import { ConfirmDialog, Empty, ErrorBlock, PageHeader, Panel, PnL, Signed, Skel } from '../ui/kit';
 import {
@@ -180,6 +180,7 @@ function Form({ existing }: { existing: Trade | null }) {
   // ----- derived -----
   const account = accounts.find((a) => a.id === f.account);
   const cur = account?.currency ?? 'USD';
+  const base = account?.initial_balance;
   const sign = currencySign(cur);
   const items = useMemo(() => confluenceItems.filter((c) => c.is_active), [confluenceItems]);
   const score = useMemo(() => confluenceScore(items, f.conf), [items, f.conf]);
@@ -379,7 +380,7 @@ function Form({ existing }: { existing: Trade | null }) {
     const same = num(current) === value;
     return (
       <span className="tf-auto">
-        <span className="tf-tag">Auto</span> <span className="j-num">{money(value, cur)}</span> {same ? 'matches your prices' : tail}
+        <span className="tf-tag">Auto</span> <span className="j-num">{money(value, cur, { mode: 'money' })}</span> {same ? 'matches your prices' : tail}
         {!same && <> · <button type="button" className="j-link" onClick={apply}>Use</button></>}
       </span>
     );
@@ -607,11 +608,11 @@ function Form({ existing }: { existing: Trade | null }) {
 
         {/* ---------- Summary ---------- */}
         <aside className="tf-side" aria-label="Summary">
-          <Panel title="Summary" meta={equity != null ? <>Equity <span className="j-num">{money(equity, cur, { decimals: 0 })}</span></> : undefined}>
+          <Panel title="Summary" meta={equity != null ? <>Equity <span className="j-num">{money(equity, cur, { decimals: 0, base })}</span></> : undefined}>
             <dl className="j-kv tf-kv">
               <dt>Planned R:R</dt><dd className="j-num">{rr != null ? `1 : ${dec2(rr)}` : '—'}</dd>
-              <dt>Risk</dt><dd className="j-num">{effRisk != null ? money(effRisk, cur) : '—'}{riskPct != null && <span className="j-dim"> · {dec2(riskPct)}%</span>}</dd>
-              <dt>Result</dt><dd className="j-num">{effRes != null ? <PnL v={effRes} currency={cur} /> : <span className="j-dim">{f.status === 'open' ? 'Open' : '—'}</span>}</dd>
+              <dt>Risk</dt><dd className="j-num">{effRisk != null ? money(effRisk, cur, { base }) : '—'}{riskPct != null && <span className="j-dim"> · {unlessHidden(`${dec2(riskPct)}%`)}</span>}</dd>
+              <dt>Result</dt><dd className="j-num">{effRes != null ? <PnL v={effRes} currency={cur} base={base} /> : <span className="j-dim">{f.status === 'open' ? 'Open' : '—'}</span>}</dd>
               <dt>Result in R</dt><dd>{resultR != null ? <Signed v={resultR} digits={2} suffix="R" /> : <span className="j-dim">—</span>}</dd>
               <dt>Checklist</dt><dd className="j-num">{scoreText}</dd>
             </dl>

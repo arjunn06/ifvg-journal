@@ -6,7 +6,8 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Mark } from '../ui/kit';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { money, monthLabel, signed } from '../format';
+import { moneyPlain as money, monthLabel, signed } from '../format';
+import { PlainFigures } from '../ui/PlainFigures';
 import { landingData } from '../landing/data';
 import { useFitText, useReveal } from '../landing/hooks';
 import { CalendarFragment, calendarMonth, ChecklistDemo, EdgeFragments, HeroFragment, MistakeFragments, PropFragment } from '../landing/fragments';
@@ -97,6 +98,7 @@ export default function Landing() {
   if (!loading && user) return <Navigate to="/dashboard" replace />;
 
   return (
+    <PlainFigures>
     <div className="lp" ref={root}>
       <header className="lp-nav">
         <Link to="/" className="lp-brand" aria-label="IFVG Journal, home"><Mark size={26} /><span>IFVG Journal</span></Link>
@@ -271,5 +273,6 @@ export default function Landing() {
 
       <Footer />
     </div>
+    </PlainFigures>
   );
 }

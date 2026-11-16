@@ -1,7 +1,8 @@
 // Weekday by session: net per cell with the trade count beneath, totals on the right and at the foot.
 // Tint is the size of the result; fainter cells have under 5 trades; an outline marks the best cell with 5 or more.
 
-import { signed } from '../../format';
+import { signed, signedMoney } from '../../format';
+import { useViewMode } from '../../view';
 import { useWidth } from '../../ui/charts';
 import { MIN_N, type MCell, type MatrixData } from './stats';
 
@@ -13,8 +14,10 @@ const compact = (v: number) => {
 
 export function MatrixGrid({ data, ariaLabel }: { data: MatrixData; ariaLabel: string }) {
   const [ref, w] = useWidth<HTMLDivElement>();
+  const mode = useViewMode();
   const narrow = w > 0 && w < 600;
-  const fmt = (v: number) => (narrow ? compact(v) : signed(v, 0));
+  // Hidden: the cell's tint is green or red already, so it carries no figure.
+  const fmt = (v: number) => (mode === 'hidden' ? '' : mode === 'percent' ? signedMoney(v, 0, { mode }) : narrow ? compact(v) : signed(v, 0));
   const max = Math.max(1, ...data.cells.flat().map((c) => (c ? Math.abs(c.net) : 0)));
   const cols = data.cols.length;
   const tint = (c: MCell) => {
@@ -38,7 +41,7 @@ export function MatrixGrid({ data, ariaLabel }: { data: MatrixData; ariaLabel: s
             const isBest = data.best?.[0] === ri && data.best?.[1] === ci;
             return (
               <div role="cell" key={c.key} className={`rp-mc ${isBest ? 'best' : ''} ${v ? '' : 'none'}`} style={v ? { background: tint(v) } : undefined}
-                title={v ? `${r.label} · ${c.label}: ${signed(v.net, 2)} over ${v.count} trade${v.count === 1 ? '' : 's'}` : `${r.label} · ${c.label}: no trades`}>
+                title={v ? `${r.label} · ${c.label}: ${signedMoney(v.net, 2, { mode })} over ${v.count} trade${v.count === 1 ? '' : 's'}` : `${r.label} · ${c.label}: no trades`}>
                 {v ? <><span className="v">{fmt(v.net)}</span><span className="n">{v.count}</span></> : <span className="j-dim">—</span>}
               </div>
             );

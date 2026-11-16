@@ -195,6 +195,13 @@ body { font-family: var(--font); font-size: var(--fs-body); line-height: 20px; }
 .j-tabs.tight { border: 0; margin: 0; gap: 20px; }
 .j-tabs.tight .j-tab { padding: 4px 0; }
 .j-tab .j-count { margin-left: 6px; color: var(--dim); font: 11px var(--mono); font-variant-numeric: tabular-nums; }
+/* Header switch for how amounts are shown ($ / % / hidden). Same selection mark as .j-range: a 1px accent line as wide as the label. */
+.j-view { display: inline-flex; align-items: center; gap: 14px; margin: 0 4px; }
+.j-view button { position: relative; display: inline-grid; place-items: center; min-width: 14px; height: 32px; padding: 0; border: 0; background: none; color: var(--dim); font: 500 13px var(--mono); cursor: pointer; transition: color 150ms ease; }
+.j-view button:hover { color: var(--text); }
+.j-view button[aria-pressed="true"] { color: var(--text); }
+.j-view button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 3px; height: 1px; background: var(--sig); }
+.j-view svg { width: 15px; height: 15px; stroke-width: 1.75; }
 .j-range { display: inline-flex; gap: 14px; }
 .j-range button { position: relative; padding: 4px 0; border: 0; background: none; color: var(--dim); font: 500 12px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; transition: color 150ms ease; }
 .j-range button:hover { color: var(--text); }
@@ -433,5 +440,14 @@ body { font-family: var(--font); font-size: var(--fs-body); line-height: 20px; }
 @media (max-width: 480px) {
   .j-range { gap: 10px; }
   .j-actions .j-btn:not(.primary) .lbl { display: none; }
+  /* The top bar carries the account, the $ / % / hidden switch, Log and the menu: make room for all four on a phone. */
+  .j-topbar { gap: 4px; }
+  .j-view { gap: 10px; margin: 0; }
+  .j-scope-name { max-width: 96px; }
+  .j-topbar .j-btn.primary { padding: 0 12px; }
+  .j-topbar .j-btn.primary .lbl { display: none; }
+}
+@media (max-width: 360px) {
+  .j-scope-name { max-width: 64px; }
 }
 @media (prefers-reduced-motion: reduce) { .j-app *, .j-app *::before, .j-app *::after { transition-duration: 0.01ms !important; animation: none !important; } }

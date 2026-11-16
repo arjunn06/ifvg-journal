@@ -2,7 +2,8 @@
 // round ticks above the maximum, one hue per chart, a tooltip that is bare text.
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { money, shortDate, signed, rMult } from '../format';
+import { money, shortDate, signedMoney, rMult } from '../format';
+import { getPercentBase, useViewMode, type ViewMode } from '../view';
 import type { Bin, Day } from '../analytics';
 import type { Trade } from '../types';
 import { rOf } from '../analytics';
@@ -40,6 +41,22 @@ export const axisFmt = (v: number) => {
   return v < 0 ? `−${s}` : s;
 };
 
+/**
+ * The y-axis label for a money value in the chosen view: 12k, 1.4% of the starting balance, or none at all when
+ * figures are hidden (the line and bars keep their shape and colour).
+ */
+export function axisLabel(mode: ViewMode, v: number, base?: number): string | null {
+  if (mode === 'hidden') return null;
+  if (mode === 'percent') {
+    const b = base ?? getPercentBase();
+    if (!b) return null;
+    const p = (v / b) * 100;
+    const s = `${+Math.abs(p).toFixed(1)}%`;
+    return p < 0 ? `−${s}` : s;
+  }
+  return axisFmt(v);
+}
+
 interface Tip { x: number; y: number; title: string; value: string; note?: string }
 function Tooltip({ tip }: { tip: Tip | null }) {
   if (!tip) return null;
@@ -58,12 +75,14 @@ export interface LinePoint { t: number; v: number; label?: string; note?: string
 export interface Ref { value: number; label: string; tone?: 'neg' | 'pos' | 'muted' }
 
 export function LineChart({
-  points, height = 260, refs = [], currency = 'USD', format, annotation, zeroBase = false, ariaLabel,
+  points, height = 260, refs = [], currency = 'USD', base, format, annotation, zeroBase = false, ariaLabel,
 }: {
   points: LinePoint[];
   height?: number;
   refs?: Ref[];
   currency?: string;
+  /** Starting balance that percent view divides by; defaults to the accounts in scope. */
+  base?: number;
   format?: (v: number) => string;
   annotation?: { t: number; label: string } | null;
   zeroBase?: boolean;
@@ -71,7 +90,8 @@ export function LineChart({
 }) {
   const [ref, w] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
-  const fmt = format ?? ((v: number) => money(v, currency));
+  const mode = useViewMode();
+  const fmt = format ?? ((v: number) => money(v, currency, { mode, base }));
   const padL = 48, padR = 12, padT = 12, padB = 26;
   const W = Math.max(w, 280), iw = W - padL - padR, ih = height - padT - padB;
 
@@ -119,7 +139,7 @@ export function LineChart({
         {geo.ticks.map((tk) => (
           <g key={tk}>
             <line className="grid" x1={padL} x2={W - padR} y1={geo.y(tk)} y2={geo.y(tk)} />
-            <text x={padL - 10} y={geo.y(tk) + 4} textAnchor="end">{axisFmt(tk)}</text>
+            <text x={padL - 10} y={geo.y(tk) + 4} textAnchor="end">{axisLabel(mode, tk, base)}</text>
           </g>
         ))}
         {zeroBase && <line className="base" x1={padL} x2={W - padR} y1={geo.y(0)} y2={geo.y(0)} />}
@@ -160,7 +180,8 @@ export function LineChart({
 
 // ---------- daily bars ----------
 
-export function DailyBars({ days, height = 260, currency = 'USD' }: { days: Day[]; height?: number; currency?: string }) {
+export function DailyBars({ days, height = 260, currency = 'USD', base }: { days: Day[]; height?: number; currency?: string; base?: number }) {
+  const mode = useViewMode();
   const [ref, w] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const padL = 48, padR = 12, padT = 12, padB = 26;
@@ -179,7 +200,7 @@ export function DailyBars({ days, height = 260, currency = 'USD' }: { days: Day[
         {ticks.map((tk) => (
           <g key={tk}>
             <line className="grid" x1={padL} x2={W - padR} y1={y(tk)} y2={y(tk)} />
-            <text x={padL - 10} y={y(tk) + 4} textAnchor="end">{axisFmt(tk)}</text>
+            <text x={padL - 10} y={y(tk) + 4} textAnchor="end">{axisLabel(mode, tk, base)}</text>
           </g>
         ))}
         <line className="base" x1={padL} x2={W - padR} y1={y(0)} y2={y(0)} />
@@ -196,7 +217,7 @@ export function DailyBars({ days, height = 260, currency = 'USD' }: { days: Day[
         })}
         {!rows.length && <text x={padL} y={y(0) - 10}>No closed trades in this view</text>}
       </svg>
-      <Tooltip tip={h ? { x: padL + slot * hover! + slot / 2, y: y(Math.max(h.pnl, 0)), title: shortDate(h.date.replace(/-/g, '/')), value: money(h.pnl, currency, { sign: true }), note: `${h.count} trade${h.count === 1 ? '' : 's'}` } : null} />
+      <Tooltip tip={h ? { x: padL + slot * hover! + slot / 2, y: y(Math.max(h.pnl, 0)), title: shortDate(h.date.replace(/-/g, '/')), value: money(h.pnl, currency, { sign: true, mode, base }), note: `${h.count} trade${h.count === 1 ? '' : 's'}` } : null} />
     </div>
   );
 }
@@ -294,6 +315,7 @@ export function Matrix({
   cell: (r: number, c: number) => { net: number; count: number } | null;
   ariaLabel: string;
 }): ReactNode {
+  const mode = useViewMode();
   let max = 1;
   rows.forEach((_, r) => cols.forEach((__, c) => { const v = cell(r, c); if (v) max = Math.max(max, Math.abs(v.net)); }));
   return (
@@ -307,14 +329,14 @@ export function Matrix({
             const v = cell(ri, ci);
             const k = v ? Math.min(1, Math.abs(v.net) / max) : 0;
             return (
-              <div key={c} title={v ? `${r} · ${c}: ${signed(v.net, 0)} over ${v.count} trades` : `${r} · ${c}: no trades`}
+              <div key={c} title={v ? `${r} · ${c}: ${signedMoney(v.net, 0, { mode })} over ${v.count} trades` : `${r} · ${c}: no trades`}
                 style={{
                   minHeight: 44, borderRadius: 4, padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
                   background: v ? `color-mix(in srgb, ${v.net >= 0 ? 'var(--positive)' : 'var(--negative)'} ${Math.round(8 + k * 42)}%, var(--ground))` : 'var(--ground)',
                 }}>
                 {v ? (
                   <>
-                    <span className="j-mono" style={{ fontSize: 12, fontWeight: 500 }}>{signed(v.net, 0)}</span>
+                    {mode !== 'hidden' && <span className="j-mono" style={{ fontSize: 12, fontWeight: 500 }}>{signedMoney(v.net, 0, { mode })}</span>}
                     <span className="j-meta" style={{ fontSize: 10 }}>{v.count}</span>
                   </>
                 ) : <span className="j-meta">—</span>}
