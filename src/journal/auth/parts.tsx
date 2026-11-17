@@ -14,20 +14,37 @@ export function Brand({ className = '' }: { className?: string }) {
 }
 
 /** A centred single-pane screen: brand, one heading, one idea, one primary action. */
-export function SoloScreen({ title, sub, children, foot }: { title: string; sub?: ReactNode; children?: ReactNode; foot?: ReactNode }) {
+export function SoloScreen({ title, sub, children, foot, steps, wide }: {
+  title: string; sub?: ReactNode; children?: ReactNode; foot?: ReactNode; steps?: ReactNode; wide?: boolean;
+}) {
   return (
     <div className="j-auth solo">
       <main className="j-auth-form">
-        <div className="auth-pane">
+        <div className={`auth-pane ${wide ? 'wide' : ''}`}>
           <Brand />
+          {steps}
           <div className="auth-head">
-            <h1>{title}</h1>
+            <h1 tabIndex={-1}>{title}</h1>
             {sub && <p>{sub}</p>}
           </div>
           {children}
           {foot && <div className="auth-fine">{foot}</div>}
         </div>
       </main>
+    </div>
+  );
+}
+
+const STEPS = ['Create account', 'Verify email', 'Add account', 'Import trades'] as const;
+
+/** Where a new user is in sign-up and setup. `current` is 1-based into STEPS. */
+export function Steps({ current }: { current: 1 | 2 | 3 | 4 }) {
+  return (
+    <div className="auth-steps" role="group" aria-label={`Setup progress: step ${current} of ${STEPS.length}, ${STEPS[current - 1]}`}>
+      <ol aria-hidden="true">
+        {STEPS.map((label, i) => <li key={label} className={i + 1 < current ? 'done' : i + 1 === current ? 'now' : undefined} />)}
+      </ol>
+      <p className="j-meta" aria-hidden="true">Step {current} of {STEPS.length} · {STEPS[current - 1]}</p>
     </div>
   );
 }

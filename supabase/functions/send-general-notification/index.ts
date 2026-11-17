@@ -1,10 +1,10 @@
 import React from 'npm:react@18.3.1';
-import { Resend } from 'npm:resend@4.0.0';
 import { renderAsync } from 'npm:@react-email/components@0.0.22';
 import { GeneralNotificationEmail } from './_templates/general-notification-email.tsx';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { HttpError, assertCanEmail, authenticate } from '../_shared/auth.ts';
+import { SENDERS, sendEmail } from '../_shared/email.ts';
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -39,8 +39,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const caller = await authenticate(req);
     const body: NotificationRequestBody = await req.json();
-    
+    assertCanEmail(caller, body.userEmail);
+
     console.log('Processing general notification email for user:', body.userEmail);
 
     // Create Supabase client
@@ -75,19 +77,15 @@ Deno.serve(async (req) => {
     console.log('Sending general notification email via Resend...');
 
     // Send the email using Resend
-    const { data, error } = await resend.emails.send({
-      from: body.fromEmail || 'IFVG Journal <notifications@ifvg.in>',
-      to: [body.userEmail],
+    // `fromEmail` may only name an address on the verified domain (enforced by sendEmail).
+    const data = await sendEmail({
+      from: body.fromEmail || SENDERS.notifications,
+      to: body.userEmail,
       subject: body.subject,
       html,
     });
 
-    if (error) {
-      console.error('Failed to send email:', error);
-      throw error;
-    }
-
-    console.log('General notification email sent successfully:', data);
+    console.log('General notification email sent successfully:', data.id);
 
     return new Response(
       JSON.stringify({ 
@@ -114,7 +112,7 @@ Deno.serve(async (req) => {
         },
       }),
       {
-        status: 500,
+        status: error instanceof HttpError ? error.status : 500,
         headers: { 
           'Content-Type': 'application/json',
           ...corsHeaders,

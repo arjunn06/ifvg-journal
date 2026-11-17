@@ -14,14 +14,21 @@ const PERIOD_KEY = 'ifvg-period';
 const read = (k: string): string | null => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string | null) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* storage blocked */ } };
 
+/** Switch sample data on. Sample data is a mode saved in localStorage, not a route, so it must be set before the app navigates in. */
+export function startDemo() {
+  write(DEMO_KEY, '1');
+  if (!read(SCOPE_KEY)) write(SCOPE_KEY, 'acc-eval');
+}
+
 // ?demo opens the app on sample data without signing in. It is read once, when the page loads, and then
 // removed from the address bar, so a stale tab or bookmark cannot switch sample data back on after you exit.
+// A <Link to="…?demo=1"> inside the running app never reloads the page, so this never sees it: in-app links
+// must call startDemo() themselves (see DemoLink on the landing page).
 (function consumeDemoParam() {
   try {
     const u = new URL(window.location.href);
     if (!u.searchParams.has('demo')) return;
-    localStorage.setItem(DEMO_KEY, '1');
-    if (!localStorage.getItem(SCOPE_KEY)) localStorage.setItem(SCOPE_KEY, 'acc-eval');
+    startDemo();
     u.searchParams.delete('demo');
     window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
   } catch { /* storage or history blocked */ }

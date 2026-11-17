@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local edge-function secrets (see supabase/functions/.env.example)
+supabase/functions/.env
+supabase/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

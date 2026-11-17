@@ -5,9 +5,33 @@ the mistakes, then review edge by session, setup, confluence score and behaviour
 
 Everything signed-in renders inside `ui/Shell.tsx` (56px icon rail, top bar with account scope switcher,
 ⌘K search, *Log trade*, bottom bar on phones). Pages return their content only: no layout, no sidebar.
+The one exception is `/onboarding`: a full-screen first-run flow (sign up → verify email by 6-digit code →
+add account → import trades or "Import later"). `onboarding/OnboardingGate.tsx` sends a user with no account
+and no `profiles.has_completed_onboarding` there from anywhere in the app, and sends finished users away from it.
 
 Open any screen on sample data without signing in: `http://localhost:8080/<route>?demo=1`
 (sticks via localStorage until "Exit sample data"). Demo writes stay in memory.
+`?demo` is only read when the page first loads, so an in-app link must call `startDemo()` before navigating
+(see `DemoLink` in `pages/Landing.tsx`): a router `<Link to="/dashboard?demo=1">` just lands on the sign-in page.
+
+## Access: the journal is members-only
+
+The journal comes with the Blue Pill course (https://blueprint.ifvg.in/bluepill, ₹499 a month + taxes); it is not sold
+on its own. Quote the offer from `access/bluepill.ts`, never retype it. Everything signed-in sits behind
+`access/PremiumGate` (in `RequireAuth`, `App.tsx`); sample data is the one public preview and never touches the database.
+
+- Who has access (`useSubscription().isPremium`): an active Blue Pill purchase (`bluepill_memberships`, matched on the user's
+  verified email by `my_bluepill_membership()`), or an active `subscribers` row (`subscribed` and not past `subscription_end`),
+  or `profiles.premium_access_override` (admin grant, invitations), or `profiles.role = 'admin'`. Anyone else sees "The journal comes with the Blue Pill".
+- A purchase reaches the journal through the `bluepill-webhook` edge function (Razorpay events, or a signed plain call for a
+  manual grant/revoke), keyed by email so it works whether the buyer signs up before or after paying. Setup, event rules and
+  the "I paid but cannot get in" checklist: `docs/bluepill-webhook.md`. Never write `bluepill_memberships` from the client.
+- `isLoading` is only the first answer for the signed-in user; refreshes (every 5 min, on tab focus) are silent. Do not make
+  the gate depend on anything that flips during a refresh, or the app unmounts under someone who is using it.
+- A failed check is `checkFailed`, shown as "could not check", never as "no membership".
+- The gate is the interface half. Users must not be able to write their own access: `supabase/migrations/20261116090000_lock_premium_grants.sql`
+  removes their write policies on `subscribers` and locks `profiles.premium_access_override` to admins. Do not add a client-side
+  upsert to `subscribers`; access is granted by an admin or the server (service role).
 
 ## The look (do not drift from it)
 

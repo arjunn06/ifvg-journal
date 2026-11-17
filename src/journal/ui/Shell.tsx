@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, CalendarDays, ChartNoAxesColumn, ChevronDown, Crosshair, EyeOff, LayoutGrid, LogOut, Plus, Search, Wallet, MoreHorizontal, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
 import { useJournal, exitDemo } from '../JournalProvider';
+import { BLUEPILL } from '../access/bluepill';
 import { accountEquity } from '../analytics';
 import { money, isoDate, initials, currencySign } from '../format';
 import { VIEW_MODES, setViewMode, useStoredViewMode, type ViewMode } from '../view';
@@ -11,6 +11,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { Avatar, Mark, hueFor, usePopover } from './kit';
 import { THEMES } from './ThemeToggle';
 import { QuickLogProvider, useQuickLog } from '../quicklog/QuickLog';
+import { AccountDialog } from '../pages/accounts/AccountDialog';
 
 const NAV = [
   { to: '/dashboard', label: 'Overview', icon: LayoutGrid, match: ['/dashboard'] },
@@ -26,6 +27,7 @@ const isActive = (path: string, match: string[]) => match.some((m) => path === m
 function ScopeSwitcher() {
   const { accounts, trades, transactions, scope, setScope, scopeAccounts } = useJournal();
   const { open, setOpen, ref } = usePopover();
+  const [adding, setAdding] = useState(false);
   const active = accounts.filter((a) => a.is_active);
   const label = scope === 'all' ? `All accounts (${active.length})` : scopeAccounts[0]?.name ?? 'Account';
   const idx = scope === 'all' ? 0 : Math.max(0, accounts.findIndex((a) => a.id === scope));
@@ -52,8 +54,11 @@ function ScopeSwitcher() {
               </span>
             </button>
           ))}
+          <div className="j-sep" />
+          <button onClick={() => { setOpen(false); setAdding(true); }}><Plus size={15} /> Add account</button>
         </div>
       )}
+      <AccountDialog open={adding} onClose={() => setAdding(false)} onSaved={(id) => { setAdding(false); setScope(id); }} onDemo={() => undefined} />
     </div>
   );
 }
@@ -82,7 +87,6 @@ function ViewSwitcher() {
 
 function UserMenu() {
   const { user, signOut } = useAuth();
-  const { isPremium } = useSubscription();
   const { isDemo } = useJournal();
   const { theme, setTheme } = useTheme();
   const nav = useNavigate();
@@ -96,7 +100,9 @@ function UserMenu() {
       {open && (
         <div className="j-pop" style={{ top: 40, right: 0 }}>
           <div className="j-grp" style={{ textTransform: 'none' }}>{isDemo ? 'Sample data' : user?.email}</div>
-          {!isPremium && !isDemo && <button onClick={() => { setOpen(false); nav('/upgrade'); }}><Sparkles size={15} /> Upgrade</button>}
+          {isDemo
+            ? <a href={BLUEPILL.url} target="_blank" rel="noopener noreferrer"><Sparkles size={15} /> Get the Blue Pill</a>
+            : <button onClick={() => { setOpen(false); nav('/upgrade'); }}><Sparkles size={15} /> Membership</button>}
           <div className="j-grp">Theme</div>
           {THEMES.map(({ value, label, icon: Icon }) => (
             <button key={value} role="menuitemradio" aria-checked={theme === value} onClick={() => setTheme(value)}><Icon size={15} /> {label}</button>
@@ -208,8 +214,11 @@ function ShellInner() {
         <main className="j-canvas">
           {isDemo && (
             <div className="j-notice" role="status">
-              <span>Sample data. Nothing here is saved.</span>
-              <button className="j-link" onClick={exitDemo}>Exit sample data</button>
+              <span>Sample data. Nothing here is saved. The journal comes free with the Blue Pill.</span>
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 16 }}>
+                <a className="j-link" style={{ marginLeft: 0 }} href={BLUEPILL.url} target="_blank" rel="noopener noreferrer">Get the Blue Pill</a>
+                <button className="j-link" style={{ marginLeft: 0 }} onClick={exitDemo}>Exit sample data</button>
+              </span>
             </div>
           )}
           <Outlet />

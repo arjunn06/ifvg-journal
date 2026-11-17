@@ -6,8 +6,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.3";
 serve(async (req) => {
   try {
     // Get env variables
-    const supabaseUrl = Deno.env.get("https://dynibyqrcbxneiwjyahn.supabase.co");
-    const supabaseServiceRoleKey = Deno.env.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5bmlieXFyY2J4bmVpd2p5YWhuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mjc2Mzc2MiwiZXhwIjoyMDY4MzM5NzYyfQ.rPYESefF1cZrK__HOp8vMA3TazKpTei-p7jTycDRoJE");
+    // Both are provided to Edge Functions by the Supabase runtime; never put key values in source.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       return new Response(JSON.stringify({ error: "Server misconfigured: missing environment variables" }), {

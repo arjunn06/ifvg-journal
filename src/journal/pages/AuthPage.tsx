@@ -1,18 +1,21 @@
 // /auth. Two panes: a read-only crop of the product on sample data, and one form that switches between
-// sign in and create account. Behaviour mirrors the old screen: redirect when signed in (to where
-// RequireAuth sent us from, else the dashboard), verification redirect after sign up, and the
-// non-revealing message when an address is already registered.
+// sign in and create account. Redirect when signed in (to where RequireAuth sent us from, else the
+// dashboard, which sends new users on to onboarding), the emailed-code screen after sign up (or after
+// signing in with an address that was never verified), and the non-revealing message when an address
+// is already registered.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { buildDemo } from '../demo';
+import { isDemoMode, setDemoMode } from '../JournalProvider';
 import { equityCurve, summarize } from '../analytics';
 import { moneyPlain as money, pct, rMult } from '../format';
 import { PlainFigures } from '../ui/PlainFigures';
 import { Kpis, Tabs } from '../ui/kit';
 import { LineChart } from '../ui/charts';
 import { Brand, Field, PasswordField } from '../auth/parts';
+import { rememberPending, sendSignupCode } from '../auth/otp';
 
 type Mode = 'signin' | 'signup';
 
@@ -62,6 +65,9 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Coming here means a real account: leave sample data, or signing in would land straight back on it.
+  useEffect(() => { if (isDemoMode()) setDemoMode(false); }, []);
+
   if (user) return <Navigate to={from ?? '/dashboard'} replace />;
 
   const switchMode = (m: Mode) => { setMode(m); setError(null); setNotice(null); };
@@ -69,17 +75,29 @@ export default function AuthPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError(null); setNotice(null);
+    const address = email.trim();
     if (mode === 'signin') {
-      const { error: err } = await signIn(email, password);
-      if (err) setError(err.message || 'Could not sign in.');
+      const { error: err } = await signIn(address, password);
+      if (err) {
+        // Signed up but never entered the code: send a fresh one (a rate-limit error just means one is already out) and carry on there.
+        if (err.code === 'email_not_confirmed' || /email not confirmed/i.test(err.message ?? '')) {
+          await sendSignupCode(address);
+          rememberPending(address);
+          nav('/verify-email', { state: { email: address } });
+          return;
+        }
+        setError(err.message || 'Could not sign in.');
+      }
     } else {
-      const { error: err } = await signUp(email, password, displayName);
+      const { error: err, session } = await signUp(address, password, displayName);
       if (err) {
         // signUp answers an already-registered address with a neutral message, not an error to alarm about.
         if (/^If this email is not already registered/.test(err.message)) setNotice(err.message);
         else setError(err.message || 'Could not create the account.');
-      } else {
-        window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+      } else if (!session) {
+        // The project asks for email verification: the code is on its way. (With a session, `user` is set and we redirect below.)
+        rememberPending(address);
+        nav('/verify-email', { state: { email: address } });
         return;
       }
     }

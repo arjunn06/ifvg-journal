@@ -6,7 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: any }>;
+  /** `session` is set only when the project does not require email verification; otherwise the user must verify with the emailed code first. */
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: any; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -39,9 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
+    // The email carries a 6-digit code (entered on /verify-email); the link in the same email is a fallback
+    // and lands in onboarding, which sends already-set-up users on to the dashboard.
+    const redirectUrl = `${window.location.origin}/onboarding`;
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -55,10 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Handle the case where user already exists without revealing this information
     if (error && error.message.includes('already registered')) {
-      return { error: { message: 'If this email is not already registered, you will receive a confirmation email shortly.' } };
+      return { error: { message: 'If this email is not already registered, you will receive a confirmation email shortly.' }, session: null };
     }
 
-    return { error };
+    return { error, session: data?.session ?? null };
   };
 
   const signIn = async (email: string, password: string) => {

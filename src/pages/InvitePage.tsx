@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Field, PasswordField, SoloScreen } from '@/journal/auth/parts';
+import { rememberPending } from '@/journal/auth/otp';
 
 interface InvitationData {
   id: string;
@@ -27,6 +28,7 @@ export function InvitePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const { user, signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const validateInvitation = async () => {
@@ -91,7 +93,7 @@ export function InvitePage() {
     setIsSigningUp(true);
 
     try {
-      const { error } = await signUp(
+      const { error, session } = await signUp(
         invitation!.email,
         formData.password,
         formData.displayName
@@ -110,6 +112,13 @@ export function InvitePage() {
           used_at: new Date().toISOString()
         })
         .eq('token', token);
+
+      if (!session) {
+        // Email verification is on: the emailed code finishes sign-up, then onboarding starts.
+        rememberPending(invitation!.email);
+        navigate('/verify-email', { state: { email: invitation!.email } });
+        return;
+      }
 
       toast({
         title: 'Welcome to IFVG Journal!',

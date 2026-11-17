@@ -11,10 +11,13 @@ import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 import { AdminRoute } from './components/AdminRoute';
 import { JournalProvider, isDemoMode } from '@/journal/JournalProvider';
 import { Shell } from '@/journal/ui/Shell';
+import { OnboardingGate } from '@/journal/onboarding/OnboardingGate';
+import { PremiumGate } from '@/journal/access/PremiumGate';
 
 const Landing = lazy(() => import('@/journal/pages/Landing'));
 const Auth = lazy(() => import('@/journal/pages/AuthPage'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const Onboarding = lazy(() => import('@/journal/pages/Onboarding'));
 const ResetPassword = lazy(() => import('@/journal/pages/ResetPassword'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Overview = lazy(() => import('@/journal/pages/Overview'));
@@ -39,15 +42,24 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWind
 
 const Splash = () => <div className="j-app" style={{ display: 'grid', placeItems: 'center' }}><span className="j-meta">Loading…</span></div>;
 
-/** Everything behind sign-in lives inside the shell. Sample-data mode skips the sign-in. */
+/**
+ * Everything behind sign-in, and the whole of it is for members: the journal comes with the Blue Pill, so a
+ * signed-in account without a membership gets the no-access screen (PremiumGate) instead of the app. Past that,
+ * the onboarding gate sends users who have not set up yet to /onboarding (a full-screen flow outside the shell);
+ * the rest of the app lives inside the shell. Sample-data mode is the free preview: it skips sign-in, the
+ * membership check and onboarding, and never reads or writes the database.
+ */
 function RequireAuth() {
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
-  if (!isDemoMode()) {
-    if (loading) return <Splash />;
-    if (!user) return <Navigate to="/auth" replace state={{ from: pathname }} />;
-  }
-  return <JournalProvider><Shell /></JournalProvider>;
+  if (isDemoMode()) return <JournalProvider><OnboardingGate fallback={<Splash />} /></JournalProvider>;
+  if (loading) return <Splash />;
+  if (!user) return <Navigate to="/auth" replace state={{ from: pathname }} />;
+  return (
+    <PremiumGate fallback={<Splash />}>
+      <JournalProvider><OnboardingGate fallback={<Splash />} /></JournalProvider>
+    </PremiumGate>
+  );
 }
 
 const App = () => (
@@ -68,26 +80,29 @@ const App = () => (
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route element={<RequireAuth />}>
-                    <Route path="/dashboard" element={<Overview />} />
-                    <Route path="/trades" element={<Journal />} />
-                    <Route path="/trades/new" element={<TradeForm />} />
-                    <Route path="/trades/edit/:id" element={<TradeForm />} />
-                    <Route path="/trades/:id" element={<TradeView />} />
-                    <Route path="/calendar" element={<CalendarPage />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/weekly-report" element={<Navigate to="/reports?tab=periods" replace />} />
-                    <Route path="/monthly-report" element={<Navigate to="/reports?tab=periods" replace />} />
-                    <Route path="/comparison" element={<Navigate to="/reports" replace />} />
-                    <Route path="/playbook" element={<Playbook />} />
-                    <Route path="/strategies" element={<Navigate to="/playbook?tab=strategies" replace />} />
-                    <Route path="/strategies/:id/analytics" element={<Navigate to="/playbook?tab=strategies" replace />} />
-                    <Route path="/confluence" element={<Navigate to="/playbook?tab=checklist" replace />} />
-                    <Route path="/notes" element={<Navigate to="/playbook?tab=notes" replace />} />
-                    <Route path="/accounts" element={<Accounts />} />
-                    <Route path="/accounts/:id" element={<Accounts />} />
-                    <Route path="/account-performance/:id" element={<Navigate to="/accounts" replace />} />
-                    <Route path="/transactions" element={<Navigate to="/accounts?tab=funding" replace />} />
-                    <Route path="/upgrade" element={<Upgrade />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route element={<Shell />}>
+                      <Route path="/dashboard" element={<Overview />} />
+                      <Route path="/trades" element={<Journal />} />
+                      <Route path="/trades/new" element={<TradeForm />} />
+                      <Route path="/trades/edit/:id" element={<TradeForm />} />
+                      <Route path="/trades/:id" element={<TradeView />} />
+                      <Route path="/calendar" element={<CalendarPage />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/weekly-report" element={<Navigate to="/reports?tab=periods" replace />} />
+                      <Route path="/monthly-report" element={<Navigate to="/reports?tab=periods" replace />} />
+                      <Route path="/comparison" element={<Navigate to="/reports" replace />} />
+                      <Route path="/playbook" element={<Playbook />} />
+                      <Route path="/strategies" element={<Navigate to="/playbook?tab=strategies" replace />} />
+                      <Route path="/strategies/:id/analytics" element={<Navigate to="/playbook?tab=strategies" replace />} />
+                      <Route path="/confluence" element={<Navigate to="/playbook?tab=checklist" replace />} />
+                      <Route path="/notes" element={<Navigate to="/playbook?tab=notes" replace />} />
+                      <Route path="/accounts" element={<Accounts />} />
+                      <Route path="/accounts/:id" element={<Accounts />} />
+                      <Route path="/account-performance/:id" element={<Navigate to="/accounts" replace />} />
+                      <Route path="/transactions" element={<Navigate to="/accounts?tab=funding" replace />} />
+                      <Route path="/upgrade" element={<Upgrade />} />
+                    </Route>
                   </Route>
                   <Route path="/payment-success" element={<PaymentSuccess />} />
                   <Route path="/payment-cancel" element={<PaymentCancel />} />

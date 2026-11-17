@@ -29,7 +29,7 @@ export const SignupConfirmationEmail = ({
 }: SignupConfirmationEmailProps) => (
   <Html>
     <Head />
-    <Preview>Welcome to IFVG Journal - Confirm your email to start trading analytics</Preview>
+    <Preview>{`Your IFVG Journal verification code is ${token}`}</Preview>
     <Body style={main}>
       <Container style={container}>
         {/* Header with branding */}
@@ -43,33 +43,29 @@ export const SignupConfirmationEmail = ({
         
         {/* Main content */}
         <Section style={content}>
-          <Heading style={h1}>Welcome to IFVG Journal!</Heading>
-          
+          <Heading style={h1}>Verify your email</Heading>
+
           <Text style={greeting}>
             Hello {userDisplayName || 'Trader'},
           </Text>
-          
+
           <Text style={paragraph}>
-            Thank you for joining IFVG Journal, the professional trading journal and analytics platform. 
-            To get started with tracking and analyzing your trades, please confirm your email address.
+            Thank you for joining IFVG Journal. Enter this code on the verification screen to confirm
+            your email address and finish creating your account.
           </Text>
-          
+
+          <Section style={codeSection}>
+            <Text style={codeLabel}>Your verification code</Text>
+            <Text style={code}>{token}</Text>
+          </Section>
+
+          <Text style={alternativeText}>
+            Can't enter the code? Use this link instead:
+          </Text>
           <Section style={ctaSection}>
             <Button href={confirmationUrl} style={ctaButton}>
-              Confirm Email & Start Trading
+              Confirm my email
             </Button>
-          </Section>
-          
-          <Text style={alternativeText}>
-            Or copy and paste this link into your browser:
-          </Text>
-          <Text style={linkText}>
-            {confirmationUrl}
-          </Text>
-          
-          <Section style={codeSection}>
-            <Text style={codeLabel}>Verification Code:</Text>
-            <Text style={code}>{token}</Text>
           </Section>
           
           <Section style={featureHighlight}>
@@ -225,18 +221,6 @@ const alternativeText = {
   margin: '24px 0 8px',
 };
 
-const linkText = {
-  color: '#0066cc',
-  fontSize: '14px',
-  fontFamily: 'monospace',
-  wordBreak: 'break-all' as const,
-  backgroundColor: '#f8f9fa',
-  padding: '12px',
-  borderRadius: '6px',
-  margin: '8px 0 24px',
-  textAlign: 'center' as const,
-};
-
 const codeSection = {
   backgroundColor: '#f8f9fa',
   border: '1px solid #e9ecef',
@@ -253,11 +237,11 @@ const codeLabel = {
 };
 
 const code = {
-  fontSize: '24px',
+  fontSize: '36px',
   fontWeight: '700',
   color: '#1a1a1a',
   fontFamily: 'monospace',
-  letterSpacing: '2px',
+  letterSpacing: '8px',
   margin: '0',
 };
 

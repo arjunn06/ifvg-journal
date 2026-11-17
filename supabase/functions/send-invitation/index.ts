@@ -1,10 +1,21 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-import { renderAsync } from "npm:@react-email/components@0.0.22";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Img,
+  Preview,
+  Section,
+  Text,
+  renderAsync,
+} from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+import { HttpError, authenticate, requireAdmin } from "../_shared/auth.ts";
+import { SENDERS, SITE_URL, sendEmail } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,20 +36,6 @@ const InvitationEmail = ({ email, token, inviterName, inviteUrl }: {
   inviterName: string; 
   inviteUrl: string; 
 }) => {
-  const {
-    Body,
-    Container,
-    Head,
-    Heading,
-    Html,
-    Img,
-    Link,
-    Preview,
-    Text,
-    Button,
-    Section
-  } = require('npm:@react-email/components@0.0.22');
-
   return React.createElement(Html, null,
     React.createElement(Head, null),
     React.createElement(Preview, null, "You're invited to join IFVG Journal Beta - Professional Trading Analytics"),
@@ -140,7 +137,7 @@ const logoContainer = {
 };
 
 // Hosted by the web app (public/ifvg-logo.png); email clients can't render the SVG.
-const LOGO_URL = 'https://journal.ifvg.in/ifvg-logo.png';
+const LOGO_URL = `${SITE_URL}/ifvg-logo.png`;
 
 const logoIcon = {
   display: 'block',
@@ -299,6 +296,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    requireAdmin(await authenticate(req));
     const { email, token, inviterName }: InvitationRequest = await req.json();
 
     if (!email || !token) {
@@ -311,7 +309,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const inviteUrl = `https://journal.ifvg.in/invite/${token}`;
+    const inviteUrl = `${SITE_URL}/invite/${encodeURIComponent(token)}`;
 
     // Render the React email template
     const emailHtml = await renderAsync(
@@ -323,16 +321,16 @@ const handler = async (req: Request): Promise<Response> => {
       })
     );
 
-    const emailResponse = await resend.emails.send({
-      from: "IFVG Journal <noreply@ifvg.in>",
-      to: [email],
+    const data = await sendEmail({
+      from: SENDERS.noreply,
+      to: email,
       subject: "You're invited to IFVG Journal Beta - Professional Trading Analytics",
       html: emailHtml,
     });
 
-    console.log("Invitation email sent successfully:", emailResponse);
+    console.log("Invitation email sent successfully:", data.id);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ data, error: null }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -344,7 +342,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status: error instanceof HttpError ? error.status : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

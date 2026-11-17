@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
+import { HttpError, authenticate, requireAdmin } from "../_shared/auth.ts";
+import { SENDERS, SITE_URL, sendEmail } from "../_shared/email.ts";
 import { PasswordResetEmail } from "./_templates/password-reset-email.tsx";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +25,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Real password-reset mail goes through the Auth hook (send-signup-confirmation).
+    // This endpoint is for trusted backends and admins only.
+    requireAdmin(await authenticate(req));
     const { userEmail, userDisplayName, resetUrl, token }: PasswordResetRequest = await req.json();
 
     if (!userEmail || !resetUrl || !token) {
@@ -38,6 +40,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // The link must point at our app or our Supabase project, never an arbitrary site.
+    const allowedOrigins = [SITE_URL, Deno.env.get("SUPABASE_URL")].filter(Boolean) as string[];
+    if (!allowedOrigins.some((origin) => resetUrl.startsWith(`${origin}/`))) {
+      throw new HttpError(400, "resetUrl must point at the app or Supabase project");
+    }
+
     // Render the React email template
     const emailHtml = await renderAsync(
       React.createElement(PasswordResetEmail, {
@@ -48,16 +56,16 @@ const handler = async (req: Request): Promise<Response> => {
       })
     );
 
-    const emailResponse = await resend.emails.send({
-      from: "IFVG Journal Security <security@ifvg.in>",
-      to: [userEmail],
+    const data = await sendEmail({
+      from: SENDERS.security,
+      to: userEmail,
       subject: "Reset your IFVG Journal password",
       html: emailHtml,
     });
 
-    console.log("Password reset email sent successfully:", emailResponse);
+    console.log("Password reset email sent successfully:", data.id);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ data, error: null }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -69,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status: error instanceof HttpError ? error.status : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

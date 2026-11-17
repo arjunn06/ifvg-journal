@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Eye, Upload, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, Download, Eye, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Account, Trade } from '../types';
 
@@ -12,6 +12,88 @@ const FIELDS: { key: Field; label: string; required?: boolean }[] = [
   { key: 'commission', label: 'Commission' }, { key: 'status', label: 'Status' }, { key: 'notes', label: 'Notes' },
 ];
 const SAMPLE_CSV = `Symbol,Side,Opened at,Entry price,Closed at,Exit price,Quantity,Stop loss,Target,P&L,Commission,Status,Notes\nES,long,2026-10-28 09:35,6832.25,2026-10-28 10:12,6840.50,2,6828.00,6842.00,825,4.50,closed,London breakout\nNQ,short,2026-10-29 14:05,25120.00,,,,1,,,0,open,Still in position`;
+
+// Pasted into an AI chatbot with the broker's export attached. Keep it in step with FIELDS, ALIASES and the
+// parsing below: the header names, the long/short sides, the date and number formats and the open/closed rule.
+const AI_PROMPT = `Convert the attached trade export into a CSV I can import into IFVG Journal. Reply with the finished file as a downloadable .csv, nothing else. If some rows cannot be converted, name them in one line after the file.
+
+Use exactly this header row, in this order:
+Symbol,Side,Opened at,Entry price,Closed at,Exit price,Quantity,Stop loss,Target,P&L,Commission,Status,Notes
+
+Rules:
+- One row per trade (a position from entry to exit). If the export lists fills or executions separately, combine them into one row per position.
+- Symbol: the instrument ticker, for example ES, NQ or EURUSD.
+- Side: "long" or "short", lowercase. A position opened with a buy is long; opened with a sell is short.
+- Opened at, Closed at: YYYY-MM-DD HH:mm in 24-hour time, all in one timezone. Leave Closed at empty if the trade is still open.
+- Entry price, Exit price, Stop loss, Target: plain numbers with no currency symbols or thousands separators. Leave empty if the export does not have them.
+- Quantity: contracts, lots or shares as a plain number. Use 1 if unknown.
+- P&L: the net result of the trade in the account currency, as a plain number, negative for a loss (for example -125.50). Leave empty for open trades.
+- Commission: total fees for the trade as a plain number, 0 if none.
+- Status: "closed" or "open".
+- Notes: optional short text on one line. Wrap it in double quotes if it contains a comma.
+- Symbol, Side and Opened at are required on every row.
+- Do not add extra columns, blank rows or a totals row.
+
+Example:
+Symbol,Side,Opened at,Entry price,Closed at,Exit price,Quantity,Stop loss,Target,P&L,Commission,Status,Notes
+ES,long,2026-10-28 09:35,6832.25,2026-10-28 10:12,6840.50,2,6828.00,6842.00,825,4.50,closed,London breakout
+NQ,short,2026-10-29 14:05,25120.00,,,,1,,,0,open,Still in position`;
+
+/** "Learn how to import trades": three steps, the middle one a copyable prompt for any AI chatbot. */
+function ImportHelp() {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(AI_PROMPT); }
+    catch {
+      // Clipboard API blocked (insecure origin, permissions): fall back to a hidden textarea.
+      const t = document.createElement('textarea');
+      t.value = AI_PROMPT; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); } finally { document.body.removeChild(t); }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  const step = { display: 'grid', gridTemplateColumns: '58px minmax(0, 1fr)', gap: 12, alignItems: 'start' } as const;
+  return (
+    <div style={{ borderRadius: 8, background: 'var(--raised)' }}>
+      <button type="button" aria-expanded={open} aria-controls="import-help" onClick={() => setOpen((v) => !v)}
+        style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '11px 14px', border: 0, background: 'none', color: 'var(--text)', font: 'inherit', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}>
+        Learn how to import trades
+        <ChevronDown size={16} aria-hidden="true" style={{ flex: 'none', color: 'var(--dim)', transition: 'transform 150ms ease', transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {open && (
+        <ol id="import-help" style={{ display: 'grid', gap: 16, margin: 0, padding: '2px 14px 16px', listStyle: 'none' }}>
+          <li style={step}>
+            <b style={{ color: 'var(--dim)', fontWeight: 500 }}>Step 1</b>
+            <span>Export your trades as a CSV from your broker or platform. It is usually under Trade history, Orders or Account statement.</span>
+          </li>
+          <li style={step}>
+            <b style={{ color: 'var(--dim)', fontWeight: 500 }}>Step 2</b>
+            <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
+              <span>Attach the exported CSV to any AI chatbot and paste this prompt. It rewrites your file in our format.</span>
+              <div style={{ borderRadius: 6, background: 'var(--ground)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 6px 6px 12px' }}>
+                  <span className="j-meta">Prompt</span>
+                  <button type="button" className="j-btn sm" onClick={() => void copy()}>
+                    {copied ? <Check /> : <Copy />}{copied ? 'Copied' : 'Copy prompt'}
+                  </button>
+                </div>
+                <pre tabIndex={0} aria-label="Prompt to paste into an AI chatbot" style={{ margin: 0, padding: '0 12px 12px', maxHeight: 180, overflow: 'auto', whiteSpace: 'pre-wrap', color: 'var(--text-2)', font: '12px/1.55 var(--mono, monospace)' }}>{AI_PROMPT}</pre>
+              </div>
+              <span className="j-meta" role="status">{copied ? 'Prompt copied to your clipboard.' : ''}</span>
+            </div>
+          </li>
+          <li style={step}>
+            <b style={{ color: 'var(--dim)', fontWeight: 500 }}>Step 3</b>
+            <span>Download the CSV the AI gives you and choose it below. Open it in a spreadsheet first to check the rows, since AI can make mistakes.</span>
+          </li>
+        </ol>
+      )}
+    </div>
+  );
+}
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = []; let row: string[] = []; let cell = ''; let quoted = false;
@@ -114,6 +196,7 @@ export default function ImportTradesDialog({ accounts, selectedAccountId, onClos
         <label className="j-field"><span>Import into account</span><select className="j-select" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
           {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select></label>
+        <ImportHelp />
         <div className="j-actions" style={{ gap: 8 }}>
           <a className="j-btn" href={`data:text/csv;charset=utf-8,${encodeURIComponent(SAMPLE_CSV)}`} download="trade-import-sample.csv" style={{ textDecoration: 'none' }}><Download /> Download sample CSV</a>
           <button className="j-btn" type="button" aria-expanded={showSample} onClick={() => setShowSample((v) => !v)}><Eye /> {showSample ? 'Hide sample' : 'Preview sample'}</button>

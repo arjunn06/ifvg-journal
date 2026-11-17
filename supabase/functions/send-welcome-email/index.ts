@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
+import { HttpError, assertCanEmail, authenticate } from "../_shared/auth.ts";
+import { SENDERS, sendEmail } from "../_shared/email.ts";
 import { WelcomeEmail } from "./_templates/welcome-email.tsx";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +23,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const caller = await authenticate(req);
     const { userEmail, userDisplayName }: WelcomeEmailRequest = await req.json();
 
     if (!userEmail) {
@@ -36,6 +36,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    assertCanEmail(caller, userEmail);
+
     // Render the React email template
     const emailHtml = await renderAsync(
       React.createElement(WelcomeEmail, {
@@ -44,16 +46,16 @@ const handler = async (req: Request): Promise<Response> => {
       })
     );
 
-    const emailResponse = await resend.emails.send({
-      from: "IFVG Journal <welcome@ifvg.in>",
-      to: [userEmail],
+    const data = await sendEmail({
+      from: SENDERS.welcome,
+      to: userEmail,
       subject: "🎉 Welcome to IFVG Journal - Your Trading Journey Begins!",
       html: emailHtml,
     });
 
-    console.log("Welcome email sent successfully:", emailResponse);
+    console.log("Welcome email sent successfully:", data.id);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ data, error: null }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status: error instanceof HttpError ? error.status : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

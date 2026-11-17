@@ -2,8 +2,10 @@
 // Pictures are real fragments of the signed-in app, fed by the sample journal (see ../landing/data.ts).
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { startDemo } from '../JournalProvider';
+import { BLUEPILL } from '../access/bluepill';
 import { Mark } from '../ui/kit';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { moneyPlain as money, monthLabel, signed } from '../format';
@@ -16,6 +18,29 @@ import './Landing.css';
 const R = ({ children, i = 0, kind = 'rise', className = '', as: Tag = 'div' }: { children: ReactNode; i?: number; kind?: 'rise' | 'settle' | 'row'; className?: string; as?: 'div' | 'p' | 'h2' | 'li' }) => (
   <Tag data-r={kind} className={className} style={{ ['--i' as string]: i }}>{children}</Tag>
 );
+
+/**
+ * Opens the journal on sample data. Sample data is a saved mode, not a route, and the app only reads `?demo` when
+ * the page first loads, so a plain click has to switch the mode on itself before navigating (a router <Link> to
+ * `?demo=1` lands on the sign-in page). The href is kept for open-in-new-tab, where the fresh load reads it.
+ */
+function DemoLink({ className, children }: { className?: string; children: ReactNode }) {
+  const nav = useNavigate();
+  return (
+    <a
+      href="/dashboard?demo=1"
+      className={className}
+      onClick={(e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        startDemo();
+        nav('/dashboard');
+      }}
+    >
+      {children}
+    </a>
+  );
+}
 
 const FEATURES: { name: string; text: string }[] = [
   { name: 'Trade log', text: 'Every trade with its prices, session, setup, the emotion you felt and your notes.' },
@@ -35,7 +60,8 @@ const FAQ: { q: string; a: ReactNode }[] = [
   { q: 'Can I look around first?', a: 'Yes. Explore with sample data opens the whole journal on a made-up set of trades, with no account. Nothing you change there is saved.' },
   { q: 'Does it work on my phone?', a: 'Yes. It runs in your phone’s browser with a layout of its own: the same journal, with lists in place of wide tables.' },
   { q: 'Does it place trades?', a: 'No. It is a journal, not a trading platform. It records your trades and never places an order.' },
-  { q: 'What does it cost?', a: <>Basic is free. Professional is ₹850 a month, and comes with a 30-day money-back guarantee. The details are under <a href="#plans">Plans</a> and in the <Link to="/refund">refund policy</Link>.</> },
+  { q: 'What does it cost?', a: <>The journal has no price of its own: it comes with the Blue Pill, {BLUEPILL.price} {BLUEPILL.per}, billed monthly. Join on <a href={BLUEPILL.url}>blueprint.ifvg.in</a>, then sign in here with the same email. The details are under <a href="#pricing">Pricing</a>.</> },
+  { q: 'Do I need the course to use it?', a: 'Yes. The journal is included with the Blue Pill, and with the Red Pill while your access runs. It is not sold on its own. Explore with sample data lets you look around without an account.' },
 ];
 
 function Faq() {
@@ -68,7 +94,8 @@ function Footer() {
         </div>
         <nav className="lp-footer-links" aria-label="Footer">
           <Link to="/auth">Sign in</Link>
-          <Link to="/dashboard?demo=1">Sample data</Link>
+          <DemoLink>Sample data</DemoLink>
+          <a href={BLUEPILL.url}>The Blue Pill</a>
           <Link to="/terms">Terms</Link>
           <Link to="/refund">Refund</Link>
           <a href="mailto:support@ifvg.in">Support</a>
@@ -106,12 +133,12 @@ export default function Landing() {
           <a href="#checklist">Checklist</a>
           <a href="#edge">Edge</a>
           <a href="#prop">Prop rules</a>
-          <a href="#plans">Plans</a>
+          <a href="#pricing">Pricing</a>
         </nav>
         <div className="lp-nav-end">
           <ThemeToggle />
           <Link to="/auth" className="lp-text">Sign in</Link>
-          <Link to="/auth" className="lp-btn sm">Start journaling</Link>
+          <a href={BLUEPILL.url} className="lp-btn sm">Get the Blue Pill</a>
         </div>
       </header>
 
@@ -125,9 +152,10 @@ export default function Landing() {
             <div className="lp-hero-side">
               <p className="lp-lead">Log each trade against your ICT checklist, tag the mistakes, and see which session, setup and score actually pay you.</p>
               <div className="lp-actions">
-                <Link to="/auth" className="lp-btn">Start journaling</Link>
-                <Link to="/dashboard?demo=1" className="lp-text">Explore with sample data</Link>
+                <a href={BLUEPILL.url} className="lp-btn">Get the Blue Pill</a>
+                <DemoLink className="lp-text">Explore with sample data</DemoLink>
               </div>
+              <p className="lp-cap">Included free with every Blue Pill membership.</p>
             </div>
           </div>
           <div className="lp-hero-pic"><HeroFragment /></div>
@@ -209,29 +237,29 @@ export default function Landing() {
           <figcaption>The Dōjima rice exchange, Osaka, about 1880. Futures were first traded in this market.</figcaption>
         </figure>
 
-        <section id="plans" className="lp-sec lp-plans" aria-labelledby="h-plans">
-          <R as="h2" className="lp-h2 lp-plans-h"><span id="h-plans">Plans</span></R>
+        <section id="pricing" className="lp-sec lp-plans" aria-labelledby="h-plans">
+          <R as="h2" className="lp-h2 lp-plans-h"><span id="h-plans">The journal comes with the Blue Pill</span></R>
           <div className="lp-fields">
             <article className="lp-field lp-field-a" data-r="rise">
-              <h3 className="lp-pname">Basic</h3>
-              <p className="lp-psub">To start journaling on one account.</p>
-              <p className="lp-pinc">Up to 20 trades a month, basic performance analytics, the P&amp;L calendar, one trading account and a basic confluence checklist.</p>
+              <h3 className="lp-pname">The journal</h3>
+              <p className="lp-psub">Included with every membership.</p>
+              <p className="lp-pinc">All of it: every trade, account and report, with no trade limit. Sign in with the email you joined with.</p>
               <div className="lp-pfoot">
-                <p className="lp-price"><span>₹0</span><small>a month</small></p>
-                <Link to="/auth" className="lp-btn ghost">Start journaling</Link>
+                <p className="lp-price"><span>₹0</span><small>with the Blue Pill</small></p>
+                <Link to="/auth" className="lp-btn ghost">Sign in</Link>
               </div>
             </article>
             <article className="lp-field lp-field-b" data-r="rise" style={{ ['--i' as string]: 1 }}>
-              <h3 className="lp-pname">Professional</h3>
-              <p className="lp-psub">For traders who log every trade, on several accounts.</p>
-              <p className="lp-pinc">Unlimited trades, advanced analytics and reports, multiple trading accounts, custom strategies and rules, the advanced confluence system, trade screenshots and notes, export and backup, and priority support.</p>
+              <h3 className="lp-pname">{BLUEPILL.name}</h3>
+              <p className="lp-psub">{BLUEPILL.tagline}</p>
+              <p className="lp-pinc">Every Red Pill class recording, uncut: nine modules from your first candle to prop firm ready execution. Live NY streams, trade alerts in the Discord, and one private call a month.</p>
               <div className="lp-pfoot">
-                <p className="lp-price"><span>₹850</span><small>a month</small></p>
-                <Link to="/auth" className="lp-btn">Start journaling</Link>
+                <p className="lp-price"><span>{BLUEPILL.price}</span><small>{BLUEPILL.per}</small></p>
+                <a href={BLUEPILL.url} className="lp-btn">Get the Blue Pill</a>
               </div>
             </article>
           </div>
-          <p className="lp-plans-note">Professional comes with a 30-day money-back guarantee. Read the <Link to="/refund">refund policy</Link>.</p>
+          <p className="lp-plans-note">{BLUEPILL.billing} <a href={BLUEPILL.url}>See everything inside</a>.</p>
         </section>
 
         <section id="faq" className="lp-sec" aria-labelledby="h-faq">
@@ -253,10 +281,10 @@ export default function Landing() {
             )}
             <div className="lp-tile lp-tile-c" data-r="settle">
               <h2 id="h-cta" className="lp-cta-h">Log your next trade</h2>
-              <p className="lp-cta-p">Create a free account and log your first trade against your checklist. The sample journal is open if you would rather look around first.</p>
+              <p className="lp-cta-p">The journal comes free with the Blue Pill. Join, sign in with the same email and log your first trade against your checklist. The sample journal is open if you would rather look around first.</p>
               <div className="lp-actions">
-                <Link to="/auth" className="lp-btn dark">Start journaling</Link>
-                <Link to="/dashboard?demo=1" className="lp-text dark">Explore with sample data</Link>
+                <a href={BLUEPILL.url} className="lp-btn dark">Get the Blue Pill</a>
+                <DemoLink className="lp-text dark">Explore with sample data</DemoLink>
               </div>
             </div>
             {bestDay && (

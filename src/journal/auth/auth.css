@@ -61,6 +61,49 @@
 .auth-code { font: 500 13px var(--mono); color: var(--dim); }
 .auth-foot { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
 
+/* ---------- sign-up progress and onboarding ---------- */
+.j-auth-form .auth-pane.wide { width: min(560px, 100%); }
+.auth-head h1:focus { outline: none; }
+
+.auth-steps { display: grid; gap: 8px; }
+.auth-steps ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; list-style: none; margin: 0; padding: 0; }
+.auth-steps li { height: 2px; border-radius: 1px; background: var(--control); }
+.auth-steps li.done { background: var(--text-2); }
+.auth-steps li.now { background: var(--text); }
+.auth-steps p { margin: 0; }
+
+/* the six-digit code: one real input (input-otp) drawn as cells */
+.otp { position: relative; display: flex; justify-content: center; }
+.otp-slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.otp-cell { position: relative; display: grid; place-items: center; height: 52px; border: 1px solid var(--control); border-radius: 8px; background: var(--ground); color: var(--text); font-size: 22px; font-weight: 500; transition: border-color 150ms ease; }
+.otp:hover .otp-cell { border-color: var(--control-hover); }
+.otp-cell[data-active] { border-color: var(--sig); }
+.otp-cell[data-invalid] { border-color: var(--negative); }
+.otp-caret { position: absolute; width: 1px; height: 22px; background: var(--text); animation: otp-blink 1s steps(1) infinite; }
+@keyframes otp-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .otp-caret { animation: none; } }
+
+/* choosing how to add the first account: one divided list on the surface colour */
+.ob-options { display: grid; margin: 0; padding: 0; list-style: none; border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+.ob-options li + li { border-top: 1px solid var(--rule); }
+.ob-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 64px; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; transition: background-color 150ms ease; }
+.ob-option:hover:not(:disabled) { background: var(--active); }
+.ob-option:disabled { cursor: not-allowed; }
+.ob-option:disabled b { color: var(--dim); }
+.ob-option b { display: block; font-weight: 500; }
+.ob-option small { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; font-weight: 400; color: var(--dim); }
+.ob-option > svg { width: 16px; height: 16px; flex: none; stroke-width: 1.5; color: var(--dim); }
+.ob-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ob-note { text-align: center; }
+.auth-pane .ac-well { background: var(--surface); }
+@media (max-width: 520px) {
+  .auth-pane .ac-fields { grid-template-columns: minmax(0, 1fr); }
+  .otp-slots { gap: 6px; }
+  .otp-cell { height: 48px; }
+  .ob-actions { flex-direction: column-reverse; }
+  .ob-actions .j-btn { width: 100%; height: 40px; }
+}
+
 /* ---------- legal documents ---------- */
 .j-doc { display: block !important; min-height: 100svh; background: var(--ground); color: var(--text); }
 .j-doc-bar { max-width: 720px; margin: 0 auto; padding: 24px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -109,6 +152,10 @@
 .up-buy { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .up-buy .j-btn { min-width: 200px; height: 40px; font-family: var(--font); }
 .up-plans-m { display: none; }
+.up-list { display: grid; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; }
+.up-list li { padding: 10px 0; color: var(--text-2); font-size: 13px; line-height: 20px; border-top: 1px solid var(--rule); }
+.up-list li:first-child { border-top: 0; }
+.up-list li b { color: var(--text); font-weight: 500; }
 
 @media (max-width: 860px) {
   .j-auth.solo .j-auth-form { place-items: center; align-content: center; padding-bottom: 80px; }

@@ -1,24 +1,28 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
-import { Resend } from "npm:resend@2.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
+import { SENDERS, sendEmail } from "../_shared/email.ts";
+import { PasswordResetEmail } from "../send-password-reset/_templates/password-reset-email.tsx";
 import { SignupConfirmationEmail } from "./_templates/signup-confirmation-email.tsx";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+/**
+ * Supabase Auth "Send Email" hook. Once enabled (Dashboard > Authentication > Hooks),
+ * Supabase stops sending its own auth emails and calls this function instead; Resend
+ * delivers them. Called by Supabase Auth, not by browsers, so it is deployed with
+ * verify_jwt = false (see supabase/config.toml) and authenticated by webhook signature.
+ *
+ * Handles the two flows the app uses: `signup` (sign-up + "resend verification")
+ * and `recovery` (forgot password). Other types are rejected loudly.
+ *
+ * Secrets: RESEND_API_KEY, SEND_EMAIL_HOOK_SECRET (the `v1,whsec_...` value the
+ * dashboard shows when the hook is created). SUPABASE_URL is provided by the runtime.
+ */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-interface WebhookPayload {
+interface HookPayload {
   user: {
     email: string;
-    user_metadata?: {
-      display_name?: string;
-    };
+    user_metadata?: { display_name?: string };
   };
   email_data: {
     token: string;
@@ -29,94 +33,91 @@ interface WebhookPayload {
   };
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+
+// Supabase Auth surfaces `error.message` to the client when a hook fails.
+const hookError = (httpCode: number, message: string) =>
+  json({ error: { http_code: httpCode, message } }, httpCode);
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  // Fail closed: never accept unsigned calls, otherwise anyone who can reach
+  // this URL could make Resend send mail from our domain.
+  const rawSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
+  if (!rawSecret) {
+    console.error("SEND_EMAIL_HOOK_SECRET is not set; refusing to send.");
+    return hookError(500, "Email hook is not configured.");
+  }
+
+  const payloadText = await req.text();
+  let payload: HookPayload;
+  try {
+    // standardwebhooks wants the bare base64 secret, without Supabase's `v1,whsec_` prefix.
+    const wh = new Webhook(rawSecret.replace(/^v1,whsec_/, ""));
+    payload = wh.verify(payloadText, Object.fromEntries(req.headers)) as HookPayload;
+  } catch (e) {
+    console.error("Webhook signature verification failed:", e);
+    return hookError(401, "Invalid signature.");
   }
 
   try {
-    console.log("Webhook received for signup confirmation");
-    
-    // Verify webhook signature
-    const payloadText = await req.text();
-    const headers = Object.fromEntries(req.headers);
-    const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") || "";
-
-    if (!hookSecret) {
-      console.warn("SEND_EMAIL_HOOK_SECRET not set; proceeding without verification (development mode)");
-    } else {
-      try {
-        const wh = new Webhook(hookSecret);
-        wh.verify(payloadText, headers);
-      } catch (e) {
-        console.error("Webhook verification failed:", e);
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-    }
-
-    const payload: WebhookPayload = JSON.parse(payloadText);
-    console.log("Webhook payload:", payload);
-
     const { user, email_data } = payload;
-    const { email } = user;
-    const { token_hash, redirect_to, email_action_type, site_url } = email_data;
-    
-    if (!email) {
-      console.error("No email found in webhook payload");
-      return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    const email = user?.email;
+    if (!email) return hookError(400, "No email address in hook payload.");
+
+    const { token, token_hash, redirect_to, email_action_type } = email_data;
+    const displayName = user.user_metadata?.display_name || email.split("@")[0];
+
+    // The verify endpoint lives on the Supabase project, not on the app's Site URL.
+    const actionUrl =
+      `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify` +
+      `?token=${encodeURIComponent(token_hash)}` +
+      `&type=${encodeURIComponent(email_action_type)}` +
+      `&redirect_to=${encodeURIComponent(redirect_to)}`;
+
+    let element: ReturnType<typeof React.createElement>;
+    let from: string;
+    let subject: string;
+
+    switch (email_action_type) {
+      case "signup":
+        element = React.createElement(SignupConfirmationEmail, {
+          userEmail: email,
+          userDisplayName: displayName,
+          confirmationUrl: actionUrl,
+          token,
+        });
+        from = SENDERS.noreply;
+        subject = "Your IFVG Journal verification code";
+        break;
+      case "recovery":
+        element = React.createElement(PasswordResetEmail, {
+          userEmail: email,
+          userDisplayName: displayName,
+          resetUrl: actionUrl,
+          token,
+        });
+        from = SENDERS.security;
+        subject = "Reset your IFVG Journal password";
+        break;
+      default:
+        // Failing is better than silently sending the wrong template.
+        console.error(`No email template for auth email type "${email_action_type}".`);
+        return hookError(400, `Unsupported email type: ${email_action_type}`);
     }
 
-    // Construct the confirmation URL
-    const confirmationUrl = `${site_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
-    
-    console.log("Sending confirmation email to:", email);
-    console.log("Confirmation URL:", confirmationUrl);
+    const html = await renderAsync(element);
+    // Never log `payload`, `actionUrl` or the tokens: they are credentials.
+    const sent = await sendEmail({ from, to: email, subject, html });
+    console.log(`Auth email "${email_action_type}" sent (resend id ${sent.id}).`);
 
-    // Render the React email template
-    const emailHtml = await renderAsync(
-      React.createElement(SignupConfirmationEmail, {
-        userEmail: email,
-        userDisplayName: user.user_metadata?.display_name || email.split('@')[0],
-        confirmationUrl,
-        token: token_hash
-      })
-    );
-
-    const emailResponse = await resend.emails.send({
-      from: "IFVG Journal <noreply@ifvg.in>",
-      to: [email],
-      subject: "Welcome to IFVG Journal - Confirm your email",
-      html: emailHtml,
-    });
-
-    console.log("Signup confirmation email sent successfully:", emailResponse);
-
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error in send-signup-confirmation webhook:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return json({});
+  } catch (error) {
+    console.error("send-signup-confirmation hook failed:", error);
+    return hookError(500, "Could not send the email. Please try again.");
   }
 };
 

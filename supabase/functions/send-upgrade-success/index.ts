@@ -1,10 +1,10 @@
 import React from 'npm:react@18.3.1';
-import { Resend } from 'npm:resend@4.0.0';
 import { renderAsync } from 'npm:@react-email/components@0.0.22';
 import { UpgradeSuccessEmail } from './_templates/upgrade-success-email.tsx';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { HttpError, assertCanEmail, authenticate } from '../_shared/auth.ts';
+import { SENDERS, SITE_URL, sendEmail } from '../_shared/email.ts';
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -36,8 +36,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const caller = await authenticate(req);
     const body: UpgradeRequestBody = await req.json();
-    
+    assertCanEmail(caller, body.userEmail);
+
     console.log('Processing upgrade success email for user:', body.userEmail);
 
     // Create Supabase client
@@ -55,7 +57,7 @@ Deno.serve(async (req) => {
       userDisplayName = profile?.display_name || body.userEmail.split('@')[0];
     }
 
-    const dashboardUrl = body.dashboardUrl || `${Deno.env.get('SITE_URL') || 'https://yourapp.com'}/dashboard`;
+    const dashboardUrl = body.dashboardUrl || `${SITE_URL}/dashboard`;
 
     // Render the React email template
     const html = await renderAsync(
@@ -72,19 +74,14 @@ Deno.serve(async (req) => {
     console.log('Sending upgrade success email via Resend...');
 
     // Send the email using Resend
-    const { data, error } = await resend.emails.send({
-      from: 'IFVG Journal <billing@ifvg.in>',
-      to: [body.userEmail],
+    const data = await sendEmail({
+      from: SENDERS.billing,
+      to: body.userEmail,
       subject: `Welcome to ${body.planName}! Your upgrade is complete 🎉`,
       html,
     });
 
-    if (error) {
-      console.error('Failed to send email:', error);
-      throw error;
-    }
-
-    console.log('Upgrade success email sent successfully:', data);
+    console.log('Upgrade success email sent successfully:', data.id);
 
     return new Response(
       JSON.stringify({ 
@@ -111,7 +108,7 @@ Deno.serve(async (req) => {
         },
       }),
       {
-        status: 500,
+        status: error instanceof HttpError ? error.status : 500,
         headers: { 
           'Content-Type': 'application/json',
           ...corsHeaders,
